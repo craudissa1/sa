@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { Tag } from '../ui/Tag';
 import { useRouter } from 'next/navigation'; // Use next/navigation for App Router
 import Link from 'next/link'; // Import Link
+import Image from 'next/image';
 
 interface DetalhesReceitaProps {
   id: string;
@@ -67,10 +68,11 @@ export function DetalhesReceita({ id }: DetalhesReceitaProps) {
       {/* Image Header */}
       <div className="relative h-48 sm:h-64 md:h-80 rounded-lg overflow-hidden mb-6 bg-gray-200 dark:bg-gray-700">
         {receita.imagem ? (
-          <img
+          <Image
             src={receita.imagem}
             alt={receita.nome}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">

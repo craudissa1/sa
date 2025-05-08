@@ -6,6 +6,7 @@ import { useAlimentacaoStore, RegistroRefeicao } from "@/app/stores/alimentacaoS
 import { useAuth } from "@/app/context/AuthContext";
 import { Button } from "@/app/components/ui/Button";
 import { Input } from "@/app/components/ui/Input";
+import Image from "next/image";
 
 // Ícones simples para tipos de refeição
 const tiposRefeicao = [
@@ -148,11 +149,12 @@ export function RegistroRefeicoes() {
               </Button>
             </div>
             {registro.foto_url && (
-              <div className="mt-2">
-                <img
-                  src={registro.foto_url} // Corrigido
+              <div className="mt-2 relative w-full h-40">
+                <Image
+                  src={registro.foto_url}
                   alt="Foto da refeição"
-                  className="w-full h-40 object-cover rounded-md border"
+                  fill
+                  className="object-cover rounded-md border"
                 />
               </div>
             )}
@@ -229,11 +231,12 @@ export function RegistroRefeicoes() {
                 Adicionar Foto (Simulado)
               </Button>
               {novoRegistro.foto_url && (
-                <div className="mt-2 relative w-full max-w-xs">
-                  <img
-                    src={novoRegistro.foto_url} // Corrigido
+                <div className="mt-2 relative w-full max-w-xs h-32">
+                  <Image
+                    src={novoRegistro.foto_url}
                     alt="Prévia da foto"
-                    className="w-full h-32 object-cover rounded-md border"
+                    fill
+                    className="object-cover rounded-md border"
                   />
                   <Button
                     type="button"

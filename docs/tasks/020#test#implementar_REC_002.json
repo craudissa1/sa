@@ -1,0 +1,9 @@
+{
+  "taskId": "020#test#implementar_REC_002",
+  "status": "Failed",
+  "error_message": "Falha: Especificação insuficiente para prosseguir com a implementação dos testes de integração. O Módulo de Faturamento, conforme descrito (geração de faturas para clientes, processamento de pagamentos, tratamento de inadimplência), não foi encontrado no projeto. É necessário que o módulo exista ou seja desenvolvido antes que os testes de integração possam ser implementados. A investigação nos caminhos `app/financas/`, `app/lib/billingService.ts` e uma análise geral da estrutura de arquivos não revelaram componentes correspondentes a um sistema de faturamento para clientes da aplicação.",
+  "output_references": [],
+  "new_tasks_to_integrate": {
+    "items": []
+  }
+}

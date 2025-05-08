@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Receita } from '../../stores/receitasStore'; // Import the Receita type
 import { Card } from '../ui/Card'; // Assuming Card component exists
 import { Tag } from '../ui/Tag'; // Import Tag component
@@ -21,10 +22,11 @@ export function ListaReceitas({ receitas }: ListaReceitasProps) {
             <Card className="h-full flex flex-col transition-shadow duration-200 group-hover:shadow-lg">
               <div className="relative h-40 w-full bg-gray-200 rounded-t-lg overflow-hidden">
                 {receita.imagem ? (
-                  <img
+                  <Image
                     src={receita.imagem}
                     alt={receita.nome}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -45,7 +47,7 @@ export function ListaReceitas({ receitas }: ListaReceitasProps) {
                    {receita.tags?.slice(0, 3).map((tag) => (
                      <Tag key={tag} className="mr-1 mb-1">{tag}</Tag>
                    ))}
-                   {receita.tags?.length > 3 && <Tag className="mr-1 mb-1">...</Tag>}
+                   {(receita.tags?.length ?? 0) > 3 && <Tag className="mr-1 mb-1">...</Tag>}
                 </div>
               </div>
             </Card>

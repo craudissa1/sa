@@ -41,18 +41,30 @@ export function RegistroMedicamentos() {
   const [novoHorario, setNovoHorario] = useState('08:00')
   const [erro, setErro] = useState('')
 
+  // Função para resetar o formulário
+  const resetForm = useCallback(() => {
+    setNovoMedicamento({
+      nome: '',
+      dosagem: '',
+      frequencia: 'Diária',
+      horarios: ['08:00'],
+      observacoes: '',
+      dataInicio: new Date().toISOString().split('T')[0],
+      intervalo: 240, // 4 horas por padrão
+    })
+    setEditandoId(null)
+    setMostrarForm(false)
+    setNovoHorario('')
+    setErro('')
+  }, [])
+
   // Usar useCallback para funções que são passadas como props ou dependências
   const handleAdicionarMedicamento = useCallback(() => {
-    if (!novoMedicamento.nome) {
-      setErro('O nome do medicamento é obrigatório')
+    if (!novoMedicamento.nome || !novoMedicamento.dosagem) {
+      setErro('Nome e dosagem são obrigatórios')
       return
     }
 
-    if (novoMedicamento.horarios.length === 0) {
-      setErro('Adicione pelo menos um horário')
-      return
-    }
-    
     adicionarMedicamento({
       nome: novoMedicamento.nome,
       dosagem: novoMedicamento.dosagem,
@@ -65,7 +77,7 @@ export function RegistroMedicamentos() {
     })
     
     resetForm()
-  }, [adicionarMedicamento, novoMedicamento])
+  }, [adicionarMedicamento, novoMedicamento, resetForm])
 
   const iniciarEdicao = useCallback((id: string) => {
     const medicamento = medicamentos.find(med => med.id === id);
@@ -106,7 +118,7 @@ export function RegistroMedicamentos() {
     })
     
     resetForm()
-  }, [atualizarMedicamento, editandoId, novoMedicamento])
+  }, [atualizarMedicamento, editandoId, novoMedicamento, resetForm])
 
   const adicionarHorario = useCallback(() => {
     if (!novoHorario) return
@@ -136,22 +148,6 @@ export function RegistroMedicamentos() {
     const agora = new Date().toISOString()
     registrarTomadaMedicamento(id, agora)
   }, [registrarTomadaMedicamento])
-
-  const resetForm = useCallback(() => {
-    setNovoMedicamento({
-      nome: '',
-      dosagem: '',
-      frequencia: 'Diária',
-      horarios: ['08:00'],
-      observacoes: '',
-      dataInicio: new Date().toISOString().split('T')[0],
-      intervalo: 240, // 4 horas por padrão
-    })
-    setEditandoId(null)
-    setMostrarForm(false)
-    setNovoHorario('08:00')
-    setErro('')
-  }, [])
 
   // Estatísticas sobre medicamentos
   const estatisticas = useMemo(() => {

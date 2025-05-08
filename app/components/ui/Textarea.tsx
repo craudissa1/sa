@@ -8,7 +8,7 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
   error?: string
 }
 
-export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+const TextareaComponent = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, label, error, id, ...props }, ref) => {
     const textareaId = id || `textarea-${Math.random().toString(36).substring(2, 9)}`
     
@@ -46,3 +46,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     )
   }
 )
+
+TextareaComponent.displayName = 'Textarea'
+
+export const Textarea = TextareaComponent

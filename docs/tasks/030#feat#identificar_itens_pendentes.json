@@ -1,0 +1,64 @@
+{
+  "taskId": "030#feat#identificar_itens_pendentes",
+  "status": "Done",
+  "task_output": {
+    "classification_summary": "Os itens do 'todo.md' relacionados à arquitetura Supabase foram classificados. Supabase Database e Auth são os mais críticos e estão 'Em Andamento'. Supabase Realtime está 'Não Iniciado'. Supabase Client Library está 'Em Andamento' com bom progresso. A utilização geral do Supabase como backend está 'Em Andamento', dependendo da conclusão dos seus componentes.",
+    "classified_items": [
+      {
+        "item_description": "Utilização do Supabase como backend principal.",
+        "status": "Em Andamento",
+        "completion_percentage": "60%",
+        "blockers": "Implementação completa do Supabase Database, Realtime e finalização do Auth.",
+        "estimated_completion": "2-4 semanas (dependente dos sub-itens)",
+        "potential_impact": "Muito Alto no cronograma e objetivos. Alto em dependências.",
+        "criticality_level": "Muito Alto"
+      },
+      {
+        "item_description": "Supabase Auth: Gerenciamento completo de autenticação (registro, login com email/senha, login social como Google, logout, gerenciamento de sessão JWT).",
+        "status": "Em Andamento",
+        "completion_percentage": "70%",
+        "blockers": "Verificação/finalização do login social (Google), gerenciamento de sessão JWT e testes de segurança.",
+        "estimated_completion": "1-3 dias",
+        "potential_impact": "Baixo-Médio no cronograma. Médio nos objetivos e dependências.",
+        "criticality_level": "Alto"
+      },
+      {
+        "item_description": "Supabase Database: Um banco de dados PostgreSQL para armazenar todos os dados da aplicação de forma estruturada e segura.",
+        "status": "Em Andamento",
+        "completion_percentage": "60%",
+        "blockers": "Definição/implementação completa da modelagem de dados, operações CRUD para todos os módulos, verificação de persistência/segurança.",
+        "estimated_completion": "1-2 semanas",
+        "potential_impact": "Muito Alto no cronograma, objetivos e dependências.",
+        "criticality_level": "Muito Alto"
+      },
+      {
+        "item_description": "Supabase Realtime: Para sincronização de dados em tempo real entre dispositivos, atualizando a interface do usuário instantaneamente quando os dados mudam no backend.",
+        "status": "Não Iniciado",
+        "completion_percentage": "5%",
+        "blockers": "Definição das funcionalidades que necessitam de realtime, planejamento e implementação da lógica de sincronização.",
+        "estimated_completion": "1 semana (após Supabase Database)",
+        "potential_impact": "Médio no cronograma. Médio-Alto nos objetivos. Médio em dependências.",
+        "criticality_level": "Médio"
+      },
+      {
+        "item_description": "Supabase Client Library (supabase-js): SDK para interagir com os serviços do Supabase no frontend e backend (se necessário em rotas de API Next.js).",
+        "status": "Em Andamento",
+        "completion_percentage": "80%",
+        "blockers": "Garantir uso otimizado, seguro e correto do SDK em todas as interações; revisão de código e testes abrangentes.",
+        "estimated_completion": "2-4 dias",
+        "potential_impact": "Baixo no cronograma. Baixo-Médio nos objetivos e dependências.",
+        "criticality_level": "Médio"
+      }
+    ],
+    "prioritization_order": [
+      "Supabase Database",
+      "Supabase Auth",
+      "Utilização do Supabase como backend principal",
+      "Supabase Client Library (supabase-js)",
+      "Supabase Realtime"
+    ],
+    "spec_file_path": ".state/specs/030#feat#identificar_itens_pendentes_spec.md"
+  },
+  "new_tasks_to_integrate": [],
+  "error_message": null
+}

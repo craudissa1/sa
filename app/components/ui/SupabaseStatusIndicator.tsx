@@ -7,7 +7,7 @@ import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
 
 export const SupabaseStatusIndicator = () => {
   const { isOnline, isSyncing, hasPendingChanges, syncPendingChanges } = useSupabaseStatus();
-  const syncStatus = useAppStore((state) => state.syncStatus);
+  
   
   // Determinar a cor do indicador
   const getStatusColor = () => {

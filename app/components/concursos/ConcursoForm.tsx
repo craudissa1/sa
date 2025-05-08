@@ -53,7 +53,7 @@ export function ConcursoForm({ isOpen, onClose, concursoParaEditar }: ConcursoFo
     } else {
       setFormData({...initialState, user_id: user?.id});
     }
-  }, [concursoParaEditar, user, isOpen]);
+  }, [concursoParaEditar, user, isOpen, initialState]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

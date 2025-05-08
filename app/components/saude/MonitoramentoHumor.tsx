@@ -39,6 +39,20 @@ export function MonitoramentoHumor() {
   const [anoAtual, setAnoAtual] = useState(() => new Date().getFullYear())
   const [erro, setErro] = useState('')
 
+  // Função para resetar o formulário
+  const resetForm = useCallback(() => {
+    setNovoRegistro({
+      data: new Date().toISOString().split('T')[0],
+      nivel: 3,
+      fatores: [],
+      notas: '',
+    })
+    setEditandoId(null)
+    setMostrarForm(false)
+    setNovoFator('')
+    setErro('')
+  }, [])
+
   // Usar useCallback para funções que são passadas como props ou dependências
   const handleAdicionarRegistro = useCallback(() => {
     if (!novoRegistro.data) {
@@ -54,7 +68,7 @@ export function MonitoramentoHumor() {
     })
     
     resetForm()
-  }, [adicionarRegistroHumor, novoRegistro])
+  }, [adicionarRegistroHumor, novoRegistro, resetForm])
 
   const iniciarEdicao = useCallback((registro: typeof registrosHumor[0]) => {
     setEditandoId(registro.id || null)
@@ -81,7 +95,7 @@ export function MonitoramentoHumor() {
     })
     
     resetForm()
-  }, [atualizarRegistroHumor, editandoId, novoRegistro])
+  }, [atualizarRegistroHumor, editandoId, novoRegistro, resetForm])
 
   const adicionarFator = useCallback(() => {
     if (!novoFator) return
@@ -107,18 +121,7 @@ export function MonitoramentoHumor() {
     })
   }, [novoRegistro])
 
-  const resetForm = useCallback(() => {
-    setNovoRegistro({
-      data: new Date().toISOString().split('T')[0],
-      nivel: 3,
-      fatores: [],
-      notas: '',
-    })
-    setEditandoId(null)
-    setMostrarForm(false)
-    setNovoFator('')
-    setErro('')
-  }, [])
+  // Esta função foi movida para antes dos outros hooks useCallback
 
   // Usar useMemo para cálculos ou transformações de dados
   const registrosOrdenados = useMemo(() => {

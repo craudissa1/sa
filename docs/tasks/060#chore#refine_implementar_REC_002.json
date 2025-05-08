@@ -1,0 +1,84 @@
+{
+  "taskId": "060#chore#refine_implementar_REC_002",
+  "status": "Done",
+  "task_output": {
+    "refined_task_id": "020#test#implementar_REC_002",
+    "updated_delegation_details": {
+      "description": "Implementar Recomendação 2: Implementação de Testes de Integração para Módulo de Faturamento",
+      "context": {
+        "id_recomendacao_original": "REC-002",
+        "tarefa_acionavel_especifica": "Desenvolver e implementar testes de integração para o Módulo de Faturamento, cobrindo fluxos e cenários críticos detalhados no `context.detalhes_tecnicos_adicionais`. Integrar à pipeline CI/CD com relatórios.",
+        "responsavel_justificativa": "coder-monk: Responsável pela escrita de código, incluindo testes automatizados.",
+        "prioridade_justificativa": "Alta: Mitiga o risco de erros financeiros e garante a estabilidade do core business.",
+        "sequencia_etapas_conclusao": [
+          "Identificação dos Componentes: Localizar e documentar os componentes de software (arquivos, módulos, APIs) que constituem o Módulo de Faturamento. Dada a nova informação em `localizacao_modulo_faturamento`, esta etapa pode resultar na confirmação da ausência do módulo.",
+          "Mapeamento Detalhado de Fluxos e Cenários: Detalhar os fluxos de geração de faturas, processamento de pagamentos e tratamento de inadimplência, identificando cenários normais, alternativos e críticos (conforme `context.detalhes_tecnicos_adicionais.fluxos_cenarios_criticos_faturamento`). Esta etapa depende da existência e identificação do módulo.",
+          "Definição da Estratégia e Ferramentas: Confirmar e configurar as ferramentas (Jest, msw/mocks) e a estratégia de teste (testes de API, simulação de serviços externos) conforme `context.detalhes_tecnicos_adicionais.estrategia_ferramentas_testes`.",
+          "Configuração do Ambiente e Dados de Teste: Preparar o ambiente de teste (banco de dados dedicado ou transacional, variáveis de ambiente) e desenvolver scripts/fábricas para geração de dados de massa necessários (conforme `context.detalhes_tecnicos_adicionais.ambiente_dados_teste`).",
+          "Desenvolvimento dos Scripts de Teste: Implementar os scripts de teste para cada cenário mapeado, visando 85% de cobertura dos cenários críticos.",
+          "Execução e Depuração: Executar os testes, depurar falhas e garantir a estabilidade dos mesmos.",
+          "Integração à Pipeline de CI/CD: Integrar a suíte de testes à pipeline de CI/CD, garantindo execução automática, falha da pipeline em caso de erro nos testes, e geração de relatórios de cobertura (conforme `context.detalhes_tecnicos_adicionais.integracao_cicd_validacao`).",
+          "Documentação e Validação: Documentar os testes implementados e os resultados. Submeter para validação pelo Arquiteto de Soluções."
+        ],
+        "criterios_sucesso_metodo_verificacao": "Testes de integração executando com sucesso na CI/CD (se o módulo existir e for testável). Cobertura mínima de 85% dos cenários críticos mapeados (ver `context.detalhes_tecnicos_adicionais`). Código dos testes e cobertura validados pelo Arquiteto de Soluções. Se o módulo não for encontrado, o critério de sucesso para a etapa de identificação é a documentação clara dessa ausência e a comunicação do bloqueio.",
+        "detalhes_tecnicos_adicionais": {
+          "cobertura_testes_criticos": "85%",
+          "localizacao_modulo_faturamento": "Investigação inicial (conforme feedback da tarefa anterior) indica que os componentes do Módulo de Faturamento, conforme descrito (geração de faturas para clientes, processamento de pagamentos, tratamento de inadimplência), não foram encontrados nos caminhos sugeridos (`app/financas/`, `app/lib/billingService.ts`) nem através de busca por termos chave. Os arquivos em `app/financas/` (ex: `app/components/financas/AdicionarDespesa.tsx`, `RastreadorGastos.tsx`) parecem ser focados em finanças pessoais do usuário, e não em um sistema de faturamento para clientes da aplicação. **Pré-requisito:** Antes de prosseguir com a implementação dos testes de integração, é necessário: 1. Confirmar se o Módulo de Faturamento existe e, em caso afirmativo, identificar sua localização exata. 2. Se o módulo não existir, ele precisará ser desenvolvido primeiro. Esta tarefa de teste pressupõe a existência e identificabilidade do módulo.",
+          "fluxos_cenarios_criticos_faturamento": {
+            "geracao_faturas": {
+              "descricao": "Fluxo de geração de faturas para clientes.",
+              "cenarios": [
+                "Geração de fatura para novo cliente com dados válidos.",
+                "Geração de fatura recorrente para cliente existente.",
+                "Geração de fatura com múltiplos itens/serviços e cálculo correto do total.",
+                "Geração de fatura aplicando descontos e/ou acréscimos corretamente.",
+                "Tentativa de geração de fatura com dados de cliente inválidos (crítico).",
+                "Falha na comunicação com serviço de numeração de faturas (se aplicável) (crítico)."
+              ]
+            },
+            "processamento_pagamentos": {
+              "descricao": "Fluxo de processamento de pagamentos recebidos.",
+              "cenarios": [
+                "Processamento de pagamento bem-sucedido via cartão de crédito (simulado).",
+                "Processamento de pagamento bem-sucedido via boleto bancário (simulado).",
+                "Tentativa de processamento de pagamento com cartão recusado (saldo insuficiente, dados inválidos) (crítico).",
+                "Processamento de pagamento parcial e atualização correta do saldo da fatura.",
+                "Processamento de reembolso total/parcial de um pagamento.",
+                "Falha na comunicação com gateway de pagamento (crítico)."
+              ]
+            },
+            "tratamento_inadimplencia": {
+              "descricao": "Fluxo de identificação e tratamento de clientes inadimplentes.",
+              "cenarios": [
+                "Identificação automática de faturas vencidas e não pagas.",
+                "Envio de notificação de inadimplência para cliente.",
+                "Suspensão automática de serviço após período de inadimplência (se aplicável).",
+                "Registro de negociação de dívida e atualização do status do cliente.",
+                "Falha no processo de notificação de inadimplência (crítico)."
+              ]
+            }
+          },
+          "estrategia_ferramentas_testes": {
+            "estrategia": "Testes de API para os endpoints do módulo de Faturamento. Simulação de interações com serviços externos (ex: gateways de pagamento, serviços de e-mail) utilizando mocks ou stubs para isolar o módulo em teste. Foco na verificação da lógica de negócios, integridade dos dados e corretude dos fluxos.",
+            "ferramentas": {
+              "framework_teste": "Jest (ou framework de teste padrão do projeto)",
+              "biblioteca_assertions": "Integrada ao Jest (ex: expect)",
+              "mocks_stubs": "jest.fn(), jest.spyOn(). Para serviços HTTP externos, considerar msw (Mock Service Worker) ou Nock.",
+              "test_runner": "Jest CLI (ou comando equivalente no projeto, ex: `npm test`, `yarn test`)"
+            }
+          },
+          "ambiente_dados_teste": {
+            "ambiente": "Utilizar um banco de dados de teste dedicado ou garantir que os testes sejam executados dentro de transações que são revertidas após cada teste para não afetar o banco de dados de desenvolvimento/produção. Configurar variáveis de ambiente específicas para o ambiente de teste (ex: chaves de API de sandbox para gateways de pagamento, URLs de serviços mockados).",
+            "dados_massa": "Desenvolver scripts ou utilizar fábricas de dados (ex: com Faker.js) para popular o banco de dados de teste com um conjunto de dados iniciais que cubra diversos cenários (clientes com diferentes perfis, produtos/serviços variados, histórico de faturas, etc.). Garantir que os dados de teste sejam consistentes e representativos."
+          },
+          "integracao_cicd_validacao": {
+            "integracao_cicd": "Os testes de integração devem ser adicionados como uma etapa na pipeline de CI/CD existente (ex: GitHub Actions, Jenkins, GitLab CI). A pipeline deve ser configurada para executar os testes automaticamente em cada push/pull request para branches protegidas (ex: main, develop). A falha em qualquer teste de integração deve causar a falha da pipeline. Configurar a geração e o arquivamento de relatórios de cobertura de testes (ex: LCOV report).",
+            "processo_validacao": "Após a implementação, o coder-monk deve apresentar: 1. O código dos testes para revisão. 2. Um relatório de execução dos testes mostrando todos os testes passando. 3. Um relatório de cobertura de testes. A validação final será realizada pelo Arquiteto de Soluções, que verificará a adequação dos cenários testados, a qualidade do código dos testes e a cobertura alcançada em relação aos requisitos."
+          }
+        }
+      },
+      "acceptance_criteria": "Conjunto abrangente de testes de integração para o Módulo de Faturamento implementado e validado (se o módulo existir e for testável). Os testes devem cobrir os principais fluxos (geração de faturas, processamento de pagamentos, inadimplência) e cenários críticos detalhados no `context.detalhes_tecnicos_adicionais.fluxos_cenarios_criticos_faturamento`, alcançando no mínimo 85% de cobertura dos cenários críticos. Os testes devem estar integrados à pipeline de CI/CD, com execução automática e relatórios de cobertura. A documentação dos testes e a identificação dos componentes do módulo de faturamento (ou a constatação de sua ausência) devem ser entregues.",
+      "suggested_mode": "coder-monk"
+    }
+  }
+}

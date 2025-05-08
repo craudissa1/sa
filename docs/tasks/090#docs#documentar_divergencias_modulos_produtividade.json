@@ -1,0 +1,14 @@
+{
+  "taskId": "090#docs#documentar_divergencias_modulos_produtividade",
+  "status": "Done",
+  "output_references": [
+    {
+      "type": "divergence_report",
+      "description": "Relatório de divergências para os Módulos de Produtividade e Estudos (Estudos, Concursos, Hiperfocos) em relação ao todo.md.",
+      "path": ".state/reports/090#docs#documentar_divergencias_modulos_produtividade_report.md"
+    }
+  ],
+  "error_message": null,
+  "sub_tasks_created": [],
+  "new_tasks_to_integrate": []
+}

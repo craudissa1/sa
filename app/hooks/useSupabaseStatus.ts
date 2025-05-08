@@ -7,14 +7,14 @@ export function useSupabaseStatus() {
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [hasPendingChanges, setHasPendingChanges] = useState<boolean>(false);
-  const setSyncStatus = useAppStore((state) => state.setSyncStatus);
+  
   const currentUser = useAppStore((state) => state.currentUser);
 
   // Monitorar o estado da conexão
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      setSyncStatus('online');
+      
       
       // Tentar sincronizar quando voltar online
       if (currentUser) {
@@ -24,7 +24,7 @@ export function useSupabaseStatus() {
     
     const handleOffline = () => {
       setIsOnline(false);
-      setSyncStatus('offline');
+      
     };
     
     window.addEventListener('online', handleOnline);
@@ -43,7 +43,7 @@ export function useSupabaseStatus() {
       window.removeEventListener('offline', handleOffline);
       clearInterval(checkPendingChangesInterval);
     };
-  }, [currentUser, setSyncStatus]);
+  }, [currentUser]);
   
   // Verificar se há alterações pendentes
   const checkPendingChanges = async () => {
@@ -75,7 +75,7 @@ export function useSupabaseStatus() {
     if (!currentUser || !isOnline || isSyncing) return;
     
     setIsSyncing(true);
-    setSyncStatus('syncing');
+    
     
     try {
       const success = await supabaseSync.forceSyncAll();
@@ -86,7 +86,7 @@ export function useSupabaseStatus() {
       console.error('Erro ao sincronizar alterações pendentes:', error);
     } finally {
       setIsSyncing(false);
-      setSyncStatus(isOnline ? 'online' : 'offline');
+      
     }
   };
   

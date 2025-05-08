@@ -123,7 +123,7 @@ class SupabaseRealtime {
         break;
       case 'user_configurations':
         if (eventType === 'UPDATE' || eventType === 'INSERT') {
-          store.setConfiguracao(newRecord);
+          useAppStore.setState({ configuracao: newRecord });
         }
         break;
       // Outros casos específicos podem ser adicionados conforme necessário
@@ -142,13 +142,13 @@ class SupabaseRealtime {
     
     switch (eventType) {
       case 'INSERT':
-        store.setTarefas([...tarefas, newRecord]);
+        useAppStore.setState({ tarefas: [...tarefas, newRecord] });
         break;
       case 'UPDATE':
-        store.setTarefas(tarefas.map(t => t.id === newRecord.id ? newRecord : t));
+        useAppStore.setState({ tarefas: tarefas.map(t => t.id === newRecord.id ? newRecord : t) });
         break;
       case 'DELETE':
-        store.setTarefas(tarefas.filter(t => t.id !== oldRecord.id));
+        useAppStore.setState({ tarefas: tarefas.filter(t => t.id !== oldRecord.id) });
         break;
     }
   }
@@ -159,13 +159,13 @@ class SupabaseRealtime {
     
     switch (eventType) {
       case 'INSERT':
-        store.setBlocosTempo([...blocosTempo, newRecord]);
+        useAppStore.setState({ blocosTempo: [...blocosTempo, newRecord] });
         break;
       case 'UPDATE':
-        store.setBlocosTempo(blocosTempo.map(b => b.id === newRecord.id ? newRecord : b));
+        useAppStore.setState({ blocosTempo: blocosTempo.map(b => b.id === newRecord.id ? newRecord : b) });
         break;
       case 'DELETE':
-        store.setBlocosTempo(blocosTempo.filter(b => b.id !== oldRecord.id));
+        useAppStore.setState({ blocosTempo: blocosTempo.filter(b => b.id !== oldRecord.id) });
         break;
     }
   }
@@ -176,13 +176,13 @@ class SupabaseRealtime {
     
     switch (eventType) {
       case 'INSERT':
-        store.setRefeicoes([...refeicoes, newRecord]);
+        useAppStore.setState({ refeicoes: [...refeicoes, newRecord] });
         break;
       case 'UPDATE':
-        store.setRefeicoes(refeicoes.map(r => r.id === newRecord.id ? newRecord : r));
+        useAppStore.setState({ refeicoes: refeicoes.map(r => r.id === newRecord.id ? newRecord : r) });
         break;
       case 'DELETE':
-        store.setRefeicoes(refeicoes.filter(r => r.id !== oldRecord.id));
+        useAppStore.setState({ refeicoes: refeicoes.filter(r => r.id !== oldRecord.id) });
         break;
     }
   }
@@ -193,13 +193,13 @@ class SupabaseRealtime {
     
     switch (eventType) {
       case 'INSERT':
-        store.setMedicamentos([...medicamentos, newRecord]);
+        useAppStore.setState({ medicamentos: [...medicamentos, newRecord] });
         break;
       case 'UPDATE':
-        store.setMedicamentos(medicamentos.map(m => m.id === newRecord.id ? newRecord : m));
+        useAppStore.setState({ medicamentos: medicamentos.map(m => m.id === newRecord.id ? newRecord : m) });
         break;
       case 'DELETE':
-        store.setMedicamentos(medicamentos.filter(m => m.id !== oldRecord.id));
+        useAppStore.setState({ medicamentos: medicamentos.filter(m => m.id !== oldRecord.id) });
         break;
     }
   }
@@ -210,13 +210,13 @@ class SupabaseRealtime {
     
     switch (eventType) {
       case 'INSERT':
-        store.setRegistrosHumor([...registrosHumor, newRecord]);
+        useAppStore.setState({ registrosHumor: [...registrosHumor, newRecord] });
         break;
       case 'UPDATE':
-        store.setRegistrosHumor(registrosHumor.map(r => r.id === newRecord.id ? newRecord : r));
+        useAppStore.setState({ registrosHumor: registrosHumor.map(r => r.id === newRecord.id ? newRecord : r) });
         break;
       case 'DELETE':
-        store.setRegistrosHumor(registrosHumor.filter(r => r.id !== oldRecord.id));
+        useAppStore.setState({ registrosHumor: registrosHumor.filter(r => r.id !== oldRecord.id) });
         break;
     }
   }

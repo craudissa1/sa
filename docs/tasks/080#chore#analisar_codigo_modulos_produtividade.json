@@ -1,0 +1,80 @@
+{
+  "taskId": "080#chore#analisar_codigo_modulos_produtividade",
+  "status": "Done",
+  "output_references": [
+    {
+      "type": "analysis_report",
+      "description": "Relatório de análise de código para os módulos de Produtividade e Estudos (Estudos, Concursos, Hiperfocos).",
+      "details": {
+        "module_Estudos": {
+          "functionalities": [
+            "Registro de Sessões de Estudo (CRUD, estatísticas)",
+            "Temporizador Pomodoro (configurável, ciclos)",
+            "Visualizador de Materiais (Checklist, Markdown, com busca local/Drive)",
+            "Simulados (carregar JSON, gerar de banco de questões, realizar, ver resultados, histórico)"
+          ],
+          "data_structures": [
+            "SessaoEstudo (para registroEstudosStore)",
+            "ConfiguracaoPomodoro (para pomodoroStore)",
+            "SimuladoData, Questao, SimuladoMetadata (para simuladoStore)",
+            "HistoricoSimuladoEntry, TentativaSimulado (para historicoSimuladosStore)"
+          ],
+          "complexity": "Média",
+          "integrations": [
+            "Supabase (config Pomodoro)",
+            "LocalStorage (registro de estudos, histórico simulados)",
+            "API local /api/materiais/",
+            "API externa /api/drive/carregar-material (inferida)",
+            "Stores: pomodoroStore, registroEstudosStore, simuladoStore, historicoSimuladosStore"
+          ],
+          "origin_hypothesis": "Desenvolvimento customizado, foco em ferramentas de produtividade para estudantes.",
+          "effort_estimation": "Médio a Alto"
+        },
+        "module_Concursos": {
+          "functionalities": [
+            "Gerenciamento de Concursos (CRUD, conteúdo programático)",
+            "Gerenciamento de Questões (CRUD, associação a concursos)",
+            "Geração de Contexto de Concurso (LLM simulado no frontend, importação JSON)",
+            "Geração de Questões (LLM real via API Perplexity, importação)",
+            "Importação de Concurso (JSON de LLM externa)"
+          ],
+          "data_structures": [
+            "Concurso, ConteudoProgramatico (para concursosStore)",
+            "Questao, AlternativaQuestao (para questoesStore)",
+            "QuestaoLLM (para API gerar-questao)"
+          ],
+          "complexity": "Alta",
+          "integrations": [
+            "Supabase (concursos, questões)",
+            "Perplexity AI (API /api/gerar-questao)",
+            "Stores: concursosStore, questoesStore",
+            "LocalStorage (passagem de questões para simulado personalizado)"
+          ],
+          "origin_hypothesis": "Desenvolvimento customizado com funcionalidades de IA.",
+          "effort_estimation": "Alto"
+        },
+        "module_Hiperfocos": {
+          "functionalities": [
+            "Conversor de Interesses (cria projeto de hiperfoco com tarefas)",
+            "Visualizador de Projetos em Árvore (CRUD de tarefas/subtarefas)",
+            "Sistema de Alternância (gerencia sessões de transição entre hiperfocos)",
+            "Temporizador de Foco (para hiperfocos específicos, com alarme)"
+          ],
+          "data_structures": [
+            "HiperfocoProjeto, HiperfocoTarefa, HiperfocoSessao (para hiperfocosStore)",
+            "CORES_HIPERFOCOS (constante de cores)"
+          ],
+          "complexity": "Alta",
+          "integrations": [
+            "Supabase (projetos, tarefas, sessões de hiperfoco)",
+            "Store: hiperfocosStore"
+          ],
+          "origin_hypothesis": "Desenvolvimento customizado para gerenciamento de foco profundo.",
+          "effort_estimation": "Alto"
+        }
+      }
+    }
+  ],
+  "error_message": null,
+  "new_tasks_to_integrate": []
+}

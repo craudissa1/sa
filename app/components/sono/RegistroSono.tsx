@@ -81,7 +81,7 @@ export function RegistroSono() {
       setModoEdicao(false)
       setIdEdicao(null)
     } else {
-      adicionarRegistroSono(inicioISO, fimISO, qualidade, notas)
+      adicionarRegistroSono({ inicio: inicioISO, fim: fimISO, qualidade, notas })
     }
     
     // Limpar o formulário
@@ -349,7 +349,7 @@ export function RegistroSono() {
                       
                       {registro.qualidade !== null && (
                         <div className="flex mt-1">
-                          {renderEstrelas(registro.qualidade)}
+                          {renderEstrelas(registro.qualidade ?? null)}
                         </div>
                       )}
                       
@@ -370,7 +370,7 @@ export function RegistroSono() {
                       </button>
                       
                       <button
-                        onClick={() => removerRegistroSono(registro.id)}
+                        onClick={() => removerRegistroSono(registro.id ?? '')}
                         className="p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                         aria-label="Remover registro"
                       >
@@ -381,7 +381,7 @@ export function RegistroSono() {
                   
                   {!registro.fim && (
                     <button
-                      onClick={() => registrarAcordarAgora(registro.id)}
+                      onClick={() => registrarAcordarAgora(registro.id ?? '')}
                       className="mt-2 px-3 py-1 text-sm bg-sono-light text-sono-primary rounded-md hover:bg-opacity-70"
                     >
                       Registrar acordar agora

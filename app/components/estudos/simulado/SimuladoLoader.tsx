@@ -96,7 +96,7 @@ const SimuladoLoader: React.FC = () => {
       };
       reader.readAsText(file);
     },
-    [loadSimulado, setStatus, processJsonData] // Adicionar processJsonData às dependências
+    [setStatus, processJsonData] // Removido loadSimulado pois é desnecessário
   );
 
   // Handler para carregar do texto da textarea

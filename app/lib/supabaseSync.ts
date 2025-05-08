@@ -180,16 +180,16 @@ class SupabaseSync {
       switch (entity) {
         case 'tasks':
           if (event === 'create') {
-            store.setTarefas([...store.tarefas, data]);
+            useAppStore.setState({ tarefas: [...store.tarefas, data] });
           } else {
-            store.setTarefas(store.tarefas.map(t => t.id === data.id ? data : t));
+            useAppStore.setState({ tarefas: store.tarefas.map(t => t.id === data.id ? data : t) });
           }
           break;
         case 'time_blocks':
           if (event === 'create') {
-            store.setBlocosTempo([...store.blocosTempo, data]);
+            useAppStore.setState({ blocosTempo: [...store.blocosTempo, data] });
           } else {
-            store.setBlocosTempo(store.blocosTempo.map(b => b.id === data.id ? data : b));
+            useAppStore.setState({ blocosTempo: store.blocosTempo.map(b => b.id === data.id ? data : b) });
           }
           break;
         // Implementar outros casos...
@@ -197,10 +197,10 @@ class SupabaseSync {
     } else if (event === 'delete') {
       switch (entity) {
         case 'tasks':
-          store.setTarefas(store.tarefas.filter(t => t.id !== data.id));
+          useAppStore.setState({ tarefas: store.tarefas.filter(t => t.id !== data.id) });
           break;
         case 'time_blocks':
-          store.setBlocosTempo(store.blocosTempo.filter(b => b.id !== data.id));
+          useAppStore.setState({ blocosTempo: store.blocosTempo.filter(b => b.id !== data.id) });
           break;
         // Implementar outros casos...
       }

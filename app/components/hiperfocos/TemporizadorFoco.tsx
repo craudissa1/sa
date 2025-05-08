@@ -18,6 +18,15 @@ export function TemporizadorFoco() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   
+  // Parar temporizador
+  const pararTemporizador = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+    setTemporizadorAtivo(false)
+  }
+
   // Lidar com a seleção de hiperfoco
   useEffect(() => {
     if (!hiperfocoSelecionadoId) return
@@ -39,7 +48,7 @@ export function TemporizadorFoco() {
     if (temporizadorAtivo) {
       pararTemporizador()
     }
-  }, [hiperfocoSelecionadoId, hiperfocoProjetos])
+  }, [hiperfocoSelecionadoId, hiperfocoProjetos, temporizadorAtivo])
   
   // Limpar timer ao desmontar componente
   useEffect(() => {
@@ -69,14 +78,7 @@ export function TemporizadorFoco() {
     }, 1000)
   }
   
-  // Parar temporizador
-  const pararTemporizador = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current)
-      timerRef.current = null
-    }
-    setTemporizadorAtivo(false)
-  }
+  // Esta função foi movida para antes do useEffect
   
   // Pausar/Resumir temporizador
   const toggleTemporizador = () => {

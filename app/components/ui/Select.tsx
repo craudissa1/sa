@@ -15,7 +15,7 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   helpText?: string
 }
 
-export const Select = forwardRef<HTMLSelectElement, SelectProps>(
+const SelectComponent = forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, label, options, error, helpText, id, ...props }, ref) => {
     const selectId = id || `select-${Math.random().toString(36).substring(2, 9)}`
     
@@ -64,3 +64,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     )
   }
 )
+
+SelectComponent.displayName = 'Select'
+
+export const Select = SelectComponent

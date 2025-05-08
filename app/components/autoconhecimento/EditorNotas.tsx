@@ -8,6 +8,7 @@ import { Input } from "@/app/components/ui/Input";
 import { Badge } from "@/app/components/ui/Badge";
 import { X, Image as ImageIcon, Save, Loader2 } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
+import Image from "next/image";
 
 type EditorNotasProps = {
   id?: string;
@@ -225,11 +226,12 @@ export function EditorNotas({ id, secaoAtual, onSave, onCancel }: EditorNotasPro
           <div className="mt-4 space-y-2">
             <label className="text-sm font-medium text-muted-foreground">Âncora Visual (URL da Imagem)</label>
             {imagemUrl ? (
-              <div className="relative group w-full max-w-md">
-                <img
+              <div className="relative group w-full max-w-md h-60">
+                <Image
                   src={imagemUrl}
                   alt="Imagem âncora"
-                  className="max-h-60 w-full object-contain rounded-md border bg-muted"
+                  fill
+                  className="object-contain rounded-md border bg-muted"
                 />
                 <Button
                   type="button"

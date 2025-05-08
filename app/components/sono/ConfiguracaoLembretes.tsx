@@ -103,7 +103,7 @@ export function ConfiguracaoLembretes() {
       setModoEdicao(false)
       setIdEdicao(null)
     } else {
-      adicionarLembrete(tipo, horario, diasSelecionados)
+      adicionarLembrete({ tipo, horario, diasSemana: diasSelecionados })
     }
     
     // Resetar formulário
@@ -308,7 +308,7 @@ export function ConfiguracaoLembretes() {
                   
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => alternarAtivoLembrete(lembrete.id)}
+                      onClick={() => alternarAtivoLembrete(lembrete.id ?? '', !lembrete.ativo)}
                       className={`p-1 rounded-md ${lembrete.ativo ? 'text-sono-primary' : 'text-gray-400'}`}
                       aria-label={lembrete.ativo ? 'Desativar lembrete' : 'Ativar lembrete'}
                     >
@@ -324,7 +324,7 @@ export function ConfiguracaoLembretes() {
                     </button>
                     
                     <button
-                      onClick={() => removerLembrete(lembrete.id)}
+                      onClick={() => removerLembrete(lembrete.id ?? '')}
                       className="p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                       aria-label="Remover lembrete"
                     >
@@ -366,7 +366,7 @@ export function ConfiguracaoLembretes() {
                   
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => alternarAtivoLembrete(lembrete.id)}
+                      onClick={() => alternarAtivoLembrete(lembrete.id ?? '', !lembrete.ativo)}
                       className={`p-1 rounded-md ${lembrete.ativo ? 'text-sono-primary' : 'text-gray-400'}`}
                       aria-label={lembrete.ativo ? 'Desativar lembrete' : 'Ativar lembrete'}
                     >
@@ -382,7 +382,7 @@ export function ConfiguracaoLembretes() {
                     </button>
                     
                     <button
-                      onClick={() => removerLembrete(lembrete.id)}
+                      onClick={() => removerLembrete(lembrete.id ?? '')}
                       className="p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                       aria-label="Remover lembrete"
                     >

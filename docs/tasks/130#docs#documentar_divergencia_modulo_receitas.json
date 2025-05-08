@@ -1,0 +1,9 @@
+{
+  "taskId": "130#docs#documentar_divergencia_modulo_receitas",
+  "status": "Done",
+  "output_references": [
+    "docs/divergencia_modulo_receitas.md"
+  ],
+  "error_message": null,
+  "new_tasks_to_integrate": []
+}

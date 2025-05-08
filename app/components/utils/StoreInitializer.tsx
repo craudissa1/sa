@@ -11,7 +11,7 @@ const StoreInitializer = () => {
   const setCurrentUser = useAppStore((state) => state.setCurrentUser);
   const fetchInitialData = useAppStore((state) => state.fetchInitialData);
   const fetchConfiguracao = useAppStore((state) => state.fetchConfiguracao);
-  const setSyncStatus = useAppStore((state) => state.setSyncStatus);
+  
 
   // Gerenciar usuário atual e carregar dados iniciais
   useEffect(() => {
@@ -22,7 +22,7 @@ const StoreInitializer = () => {
       fetchConfiguracao(user.id);
       
       // Definir status inicial de sincronização
-      setSyncStatus(navigator.onLine ? 'online' : 'offline');
+      
       
       // Configurar o serviço de sincronização
       supabaseSync.setUser(user);
@@ -42,7 +42,7 @@ const StoreInitializer = () => {
         currentUser: null
       });
     }
-  }, [user, session, loading, setCurrentUser, fetchInitialData, fetchConfiguracao, setSyncStatus]);
+  }, [user, session, loading, setCurrentUser, fetchInitialData, fetchConfiguracao]);
 
   // Gerenciar subscrições em tempo real
   useEffect(() => {
@@ -60,7 +60,7 @@ const StoreInitializer = () => {
   useEffect(() => {
     const handleOnline = () => {
       console.log("StoreInitializer: Conexão online detectada.");
-      setSyncStatus('online');
+      
       
       // Tentar sincronizar dados pendentes
       if (user) {
@@ -72,7 +72,7 @@ const StoreInitializer = () => {
     
     const handleOffline = () => {
       console.log("StoreInitializer: Conexão offline detectada.");
-      setSyncStatus('offline');
+      
     };
     
     window.addEventListener('online', handleOnline);
@@ -82,7 +82,7 @@ const StoreInitializer = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [user, setSyncStatus]);
+  }, [user]);
 
   // Inicializar o estado da aplicação apenas no lado do cliente
   useEffect(() => {
@@ -94,7 +94,6 @@ const StoreInitializer = () => {
       registrosHumor: [],
       configuracao: null,
       currentUser: null,
-      syncStatus: navigator.onLine ? 'online' : 'offline'
     });
   }, []);
 

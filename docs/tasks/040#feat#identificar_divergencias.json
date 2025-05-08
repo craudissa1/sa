@@ -1,0 +1,238 @@
+{
+  "taskId": "040#feat#identificar_divergencias",
+  "status": "Done",
+  "description": "Identificar componentes, funcionalidades, refatorações ou esforços substanciais no projeto atual que não possuem correspondência clara no 'todo.md'. Investigar sua provável origem e analisar o impacto.",
+  "new_tasks_to_integrate": [
+    {
+      "taskId": "TEMP#chore#analisar_codigo_modulos_pessoais",
+      "description": "Analisar o código dos módulos de Gerenciamento Pessoal (Alimentação, Autoconhecimento, Saúde, Sono, Lazer) identificados em '.state/specs/040#feat#identificar_divergencias_spec.md'. Identificar principais funcionalidades, estruturas de dados, complexidade, integrações e tentar inferir a origem (ex: requisito implícito, decisão de design) e o esforço de desenvolvimento.",
+      "status": "Pending",
+      "parentTaskId": "040#feat#identificar_divergencias",
+      "dependencies": [],
+      "tags": ["analise_codigo", "gerenciamento_pessoal"],
+      "acceptance_criteria_for_delegation": "Relatório de análise de código para os módulos de Gerenciamento Pessoal, detalhando: 1. Funcionalidades chave de cada submódulo (Alimentação, Autoconhecimento, Saúde, Sono, Lazer). 2. Estruturas de dados principais e stores Zustand associadas. 3. Estimativa de complexidade (baixa, média, alta). 4. Pontos de integração com outros módulos ou serviços (ex: Supabase). 5. Hipótese sobre a origem do desenvolvimento (ex: parte do escopo inicial não documentado, requisito emergente). 6. Estimativa do esforço de desenvolvimento já empregado.",
+      "suggested_mode_for_delegation": "coder-monk",
+      "context_for_delegation": {
+        "relevant_files_or_dirs": [
+          "app/components/alimentacao/",
+          "app/stores/alimentacaoStore.ts",
+          "app/alimentacao/page.tsx",
+          "app/components/autoconhecimento/",
+          "app/stores/autoconhecimentoStore.ts",
+          "app/autoconhecimento/page.tsx",
+          "app/components/saude/",
+          "app/saude/page.tsx",
+          "app/components/sono/",
+          "app/stores/sonoStore.ts",
+          "app/sono/page.tsx",
+          "app/components/lazer/",
+          "app/stores/atividadesStore.ts",
+          "app/stores/sugestoesStore.ts",
+          "app/lazer/page.tsx",
+          ".state/specs/040#feat#identificar_divergencias_spec.md"
+        ],
+        "todo_md_content": "1 | Arquitetura Proposta com Supabase A nova arquitetura utilizará o Supabase como backend principal, aproveitando seus serviços integrados: Supabase Auth: Para gerenciamento completo de autenticação (registro, login com email/senha, login social como Google, logout, gerenciamento de sessão JWT). Supabase Database: Um banco de dados PostgreSQL para armazenar todos os dados da aplicação de forma estruturada e segura. Supabase Realtime: Para sincronização de dados em tempo real entre dispositivos, atualizando a interface do usuário instantaneamente quando os dados mudam no backend. Supabase Client Library (supabase-js): SDK para interagir com os serviços do Supabase no frontend e backend (se necessário em rotas de API Next.js). 3.1."
+      }
+    },
+    {
+      "taskId": "TEMP#docs#documentar_divergencias_modulos_pessoais",
+      "description": "Com base na análise de código de TEMP#chore#analisar_codigo_modulos_pessoais, documentar as divergências dos módulos de Gerenciamento Pessoal (Alimentação, Autoconhecimento, Saúde, Sono, Lazer) em relação ao 'todo.md'. Detalhar a funcionalidade, a origem provável e a análise de impacto.",
+      "status": "Pending",
+      "parentTaskId": "040#feat#identificar_divergencias",
+      "dependencies": ["TEMP#chore#analisar_codigo_modulos_pessoais"],
+      "tags": ["documentacao", "gerenciamento_pessoal", "divergencia"],
+      "acceptance_criteria_for_delegation": "Seção no relatório de divergências (a ser consolidado posteriormente) para os Módulos de Gerenciamento Pessoal, contendo para cada submódulo: 1. Descrição da funcionalidade implementada. 2. Comparativo com o 'todo.md' (destacando a ausência). 3. Origem provável da divergência (baseada na análise de código). 4. Análise de impacto (positivo/negativo) no projeto (recursos, cronograma, alinhamento estratégico, valor para o usuário).",
+      "suggested_mode_for_delegation": "docu-crafter",
+      "context_for_delegation": {
+        "input_task_output_path": ".state/tasks/TEMP#chore#analisar_codigo_modulos_pessoais.json",
+        "specification_file_path": ".state/specs/040#feat#identificar_divergencias_spec.md",
+        "todo_md_content": "1 | Arquitetura Proposta com Supabase A nova arquitetura utilizará o Supabase como backend principal, aproveitando seus serviços integrados: Supabase Auth: Para gerenciamento completo de autenticação (registro, login com email/senha, login social como Google, logout, gerenciamento de sessão JWT). Supabase Database: Um banco de dados PostgreSQL para armazenar todos os dados da aplicação de forma estruturada e segura. Supabase Realtime: Para sincronização de dados em tempo real entre dispositivos, atualizando a interface do usuário instantaneamente quando os dados mudam no backend. Supabase Client Library (supabase-js): SDK para interagir com os serviços do Supabase no frontend e backend (se necessário em rotas de API Next.js). 3.1."
+      }
+    },
+    {
+      "taskId": "TEMP#chore#analisar_codigo_modulos_produtividade",
+      "description": "Analisar o código dos módulos de Produtividade e Estudos (Estudos, Concursos, Hiperfocos) identificados em '.state/specs/040#feat#identificar_divergencias_spec.md'. Identificar principais funcionalidades, estruturas de dados, complexidade, integrações e tentar inferir a origem e o esforço de desenvolvimento.",
+      "status": "Pending",
+      "parentTaskId": "040#feat#identificar_divergencias",
+      "dependencies": [],
+      "tags": ["analise_codigo", "produtividade", "estudos"],
+      "acceptance_criteria_for_delegation": "Relatório de análise de código para os módulos de Produtividade e Estudos, detalhando: 1. Funcionalidades chave de cada submódulo (Estudos, Concursos, Hiperfocos). 2. Estruturas de dados principais e stores Zustand associadas. 3. Estimativa de complexidade. 4. Pontos de integração (APIs, Supabase). 5. Hipótese sobre a origem. 6. Estimativa do esforço.",
+      "suggested_mode_for_delegation": "coder-monk",
+      "context_for_delegation": {
+        "relevant_files_or_dirs": [
+          "app/components/estudos/",
+          "app/stores/pomodoroStore.ts",
+          "app/stores/registroEstudosStore.ts",
+          "app/stores/simuladoStore.ts",
+          "app/estudos/",
+          "pages/api/materiais/",
+          "app/components/concursos/",
+          "app/stores/concursosStore.ts",
+          "app/stores/questoesStore.ts",
+          "app/concursos/page.tsx",
+          "pages/api/gerar-questao.ts",
+          "app/components/hiperfocos/",
+          "app/stores/hiperfocosStore.ts",
+          "app/hiperfocos/page.tsx",
+          ".state/specs/040#feat#identificar_divergencias_spec.md"
+        ],
+        "todo_md_content": "1 | Arquitetura Proposta com Supabase A nova arquitetura utilizará o Supabase como backend principal, aproveitando seus serviços integrados: Supabase Auth: Para gerenciamento completo de autenticação (registro, login com email/senha, login social como Google, logout, gerenciamento de sessão JWT). Supabase Database: Um banco de dados PostgreSQL para armazenar todos os dados da aplicação de forma estruturada e segura. Supabase Realtime: Para sincronização de dados em tempo real entre dispositivos, atualizando a interface do usuário instantaneamente quando os dados mudam no backend. Supabase Client Library (supabase-js): SDK para interagir com os serviços do Supabase no frontend e backend (se necessário em rotas de API Next.js). 3.1."
+      }
+    },
+    {
+      "taskId": "TEMP#docs#documentar_divergencias_modulos_produtividade",
+      "description": "Com base na análise de código de TEMP#chore#analisar_codigo_modulos_produtividade, documentar as divergências dos módulos de Produtividade e Estudos em relação ao 'todo.md'. Detalhar a funcionalidade, a origem provável e a análise de impacto.",
+      "status": "Pending",
+      "parentTaskId": "040#feat#identificar_divergencias",
+      "dependencies": ["TEMP#chore#analisar_codigo_modulos_produtividade"],
+      "tags": ["documentacao", "produtividade", "estudos", "divergencia"],
+      "acceptance_criteria_for_delegation": "Seção no relatório de divergências para os Módulos de Produtividade e Estudos, contendo para cada submódulo: 1. Descrição da funcionalidade. 2. Comparativo com 'todo.md'. 3. Origem provável. 4. Análise de impacto.",
+      "suggested_mode_for_delegation": "docu-crafter",
+      "context_for_delegation": {
+        "input_task_output_path": ".state/tasks/TEMP#chore#analisar_codigo_modulos_produtividade.json",
+        "specification_file_path": ".state/specs/040#feat#identificar_divergencias_spec.md",
+        "todo_md_content": "1 | Arquitetura Proposta com Supabase A nova arquitetura utilizará o Supabase como backend principal, aproveitando seus serviços integrados: Supabase Auth: Para gerenciamento completo de autenticação (registro, login com email/senha, login social como Google, logout, gerenciamento de sessão JWT). Supabase Database: Um banco de dados PostgreSQL para armazenar todos os dados da aplicação de forma estruturada e segura. Supabase Realtime: Para sincronização de dados em tempo real entre dispositivos, atualizando a interface do usuário instantaneamente quando os dados mudam no backend. Supabase Client Library (supabase-js): SDK para interagir com os serviços do Supabase no frontend e backend (se necessário em rotas de API Next.js). 3.1."
+      }
+    },
+    {
+      "taskId": "TEMP#chore#analisar_codigo_modulo_financas",
+      "description": "Analisar o código do módulo de Finanças identificado em '.state/specs/040#feat#identificar_divergencias_spec.md'. Identificar funcionalidades, estruturas, complexidade, integrações, origem e esforço.",
+      "status": "Pending",
+      "parentTaskId": "040#feat#identificar_divergencias",
+      "dependencies": [],
+      "tags": ["analise_codigo", "financas"],
+      "acceptance_criteria_for_delegation": "Relatório de análise de código para o módulo de Finanças, detalhando: 1. Funcionalidades chave. 2. Estruturas de dados e store Zustand. 3. Complexidade. 4. Integrações. 5. Hipótese de origem. 6. Estimativa de esforço.",
+      "suggested_mode_for_delegation": "coder-monk",
+      "context_for_delegation": {
+        "relevant_files_or_dirs": [
+          "app/components/financas/",
+          "app/stores/financasStore.ts",
+          "app/financas/page.tsx",
+          ".state/specs/040#feat#identificar_divergencias_spec.md"
+        ],
+        "todo_md_content": "1 | Arquitetura Proposta com Supabase A nova arquitetura utilizará o Supabase como backend principal, aproveitando seus serviços integrados: Supabase Auth: Para gerenciamento completo de autenticação (registro, login com email/senha, login social como Google, logout, gerenciamento de sessão JWT). Supabase Database: Um banco de dados PostgreSQL para armazenar todos os dados da aplicação de forma estruturada e segura. Supabase Realtime: Para sincronização de dados em tempo real entre dispositivos, atualizando a interface do usuário instantaneamente quando os dados mudam no backend. Supabase Client Library (supabase-js): SDK para interagir com os serviços do Supabase no frontend e backend (se necessário em rotas de API Next.js). 3.1."
+      }
+    },
+    {
+      "taskId": "TEMP#docs#documentar_divergencia_modulo_financas",
+      "description": "Com base na análise de TEMP#chore#analisar_codigo_modulo_financas, documentar a divergência do módulo de Finanças em relação ao 'todo.md'. Detalhar funcionalidade, origem e impacto.",
+      "status": "Pending",
+      "parentTaskId": "040#feat#identificar_divergencias",
+      "dependencies": ["TEMP#chore#analisar_codigo_modulo_financas"],
+      "tags": ["documentacao", "financas", "divergencia"],
+      "acceptance_criteria_for_delegation": "Seção no relatório de divergências para o Módulo de Finanças: 1. Descrição. 2. Comparativo. 3. Origem. 4. Impacto.",
+      "suggested_mode_for_delegation": "docu-crafter",
+      "context_for_delegation": {
+        "input_task_output_path": ".state/tasks/TEMP#chore#analisar_codigo_modulo_financas.json",
+        "specification_file_path": ".state/specs/040#feat#identificar_divergencias_spec.md",
+        "todo_md_content": "1 | Arquitetura Proposta com Supabase A nova arquitetura utilizará o Supabase como backend principal, aproveitando seus serviços integrados: Supabase Auth: Para gerenciamento completo de autenticação (registro, login com email/senha, login social como Google, logout, gerenciamento de sessão JWT). Supabase Database: Um banco de dados PostgreSQL para armazenar todos os dados da aplicação de forma estruturada e segura. Supabase Realtime: Para sincronização de dados em tempo real entre dispositivos, atualizando a interface do usuário instantaneamente quando os dados mudam no backend. Supabase Client Library (supabase-js): SDK para interagir com os serviços do Supabase no frontend e backend (se necessário em rotas de API Next.js). 3.1."
+      }
+    },
+    {
+      "taskId": "TEMP#chore#analisar_codigo_modulo_receitas",
+      "description": "Analisar o código do módulo de Receitas identificado em '.state/specs/040#feat#identificar_divergencias_spec.md'. Identificar funcionalidades, estruturas, complexidade, integrações, origem e esforço.",
+      "status": "Pending",
+      "parentTaskId": "040#feat#identificar_divergencias",
+      "dependencies": [],
+      "tags": ["analise_codigo", "receitas"],
+      "acceptance_criteria_for_delegation": "Relatório de análise de código para o módulo de Receitas: 1. Funcionalidades. 2. Estruturas e store. 3. Complexidade. 4. Integrações. 5. Origem. 6. Esforço.",
+      "suggested_mode_for_delegation": "coder-monk",
+      "context_for_delegation": {
+        "relevant_files_or_dirs": [
+          "app/components/receitas/",
+          "app/stores/receitasStore.ts",
+          "app/receitas/",
+          ".state/specs/040#feat#identificar_divergencias_spec.md"
+        ],
+        "todo_md_content": "1 | Arquitetura Proposta com Supabase A nova arquitetura utilizará o Supabase como backend principal, aproveitando seus serviços integrados: Supabase Auth: Para gerenciamento completo de autenticação (registro, login com email/senha, login social como Google, logout, gerenciamento de sessão JWT). Supabase Database: Um banco de dados PostgreSQL para armazenar todos os dados da aplicação de forma estruturada e segura. Supabase Realtime: Para sincronização de dados em tempo real entre dispositivos, atualizando a interface do usuário instantaneamente quando os dados mudam no backend. Supabase Client Library (supabase-js): SDK para interagir com os serviços do Supabase no frontend e backend (se necessário em rotas de API Next.js). 3.1."
+      }
+    },
+    {
+      "taskId": "TEMP#docs#documentar_divergencia_modulo_receitas",
+      "description": "Com base na análise de TEMP#chore#analisar_codigo_modulo_receitas, documentar a divergência do módulo de Receitas. Detalhar funcionalidade, origem e impacto.",
+      "status": "Pending",
+      "parentTaskId": "040#feat#identificar_divergencias",
+      "dependencies": ["TEMP#chore#analisar_codigo_modulo_receitas"],
+      "tags": ["documentacao", "receitas", "divergencia"],
+      "acceptance_criteria_for_delegation": "Seção no relatório de divergências para o Módulo de Receitas: 1. Descrição. 2. Comparativo. 3. Origem. 4. Impacto.",
+      "suggested_mode_for_delegation": "docu-crafter",
+      "context_for_delegation": {
+        "input_task_output_path": ".state/tasks/TEMP#chore#analisar_codigo_modulo_receitas.json",
+        "specification_file_path": ".state/specs/040#feat#identificar_divergencias_spec.md",
+        "todo_md_content": "1 | Arquitetura Proposta com Supabase A nova arquitetura utilizará o Supabase como backend principal, aproveitando seus serviços integrados: Supabase Auth: Para gerenciamento completo de autenticação (registro, login com email/senha, login social como Google, logout, gerenciamento de sessão JWT). Supabase Database: Um banco de dados PostgreSQL para armazenar todos os dados da aplicação de forma estruturada e segura. Supabase Realtime: Para sincronização de dados em tempo real entre dispositivos, atualizando a interface do usuário instantaneamente quando os dados mudam no backend. Supabase Client Library (supabase-js): SDK para interagir com os serviços do Supabase no frontend e backend (se necessário em rotas de API Next.js). 3.1."
+      }
+    },
+    {
+      "taskId": "TEMP#chore#analisar_codigo_funcionalidades_centrais",
+      "description": "Analisar o código das Funcionalidades Centrais e Estruturais (Dashboard/Início, Perfil, UI de Autenticação, Biblioteca UI, Gerenciamento de Estado Zustand, Exportar/Importar, ThemeProvider) identificadas em '.state/specs/040#feat#identificar_divergencias_spec.md'. Identificar funcionalidades, estruturas, complexidade, integrações, origem e esforço.",
+      "status": "Pending",
+      "parentTaskId": "040#feat#identificar_divergencias",
+      "dependencies": [],
+      "tags": ["analise_codigo", "core", "ui", "estado"],
+      "acceptance_criteria_for_delegation": "Relatório de análise de código para as Funcionalidades Centrais e Estruturais: 1. Funcionalidades chave de cada componente. 2. Arquitetura (ex: UI, Zustand). 3. Complexidade. 4. Integrações. 5. Origem. 6. Esforço.",
+      "suggested_mode_for_delegation": "coder-monk",
+      "context_for_delegation": {
+        "relevant_files_or_dirs": [
+          "app/components/inicio/",
+          "app/stores/prioridadesStore.ts",
+          "app/page.tsx",
+          "app/components/perfil/",
+          "app/stores/perfilStore.ts",
+          "app/perfil/page.tsx",
+          "app/auth/",
+          "app/context/AuthContext.tsx",
+          "app/components/ui/",
+          "app/stores/",
+          "app/components/ExportarImportarDados.tsx",
+          "app/components/ThemeProvider.tsx",
+          ".state/specs/040#feat#identificar_divergencias_spec.md"
+        ],
+        "todo_md_content": "1 | Arquitetura Proposta com Supabase A nova arquitetura utilizará o Supabase como backend principal, aproveitando seus serviços integrados: Supabase Auth: Para gerenciamento completo de autenticação (registro, login com email/senha, login social como Google, logout, gerenciamento de sessão JWT). Supabase Database: Um banco de dados PostgreSQL para armazenar todos os dados da aplicação de forma estruturada e segura. Supabase Realtime: Para sincronização de dados em tempo real entre dispositivos, atualizando a interface do usuário instantaneamente quando os dados mudam no backend. Supabase Client Library (supabase-js): SDK para interagir com os serviços do Supabase no frontend e backend (se necessário em rotas de API Next.js). 3.1."
+      }
+    },
+    {
+      "taskId": "TEMP#docs#documentar_divergencias_funcionalidades_centrais",
+      "description": "Com base na análise de TEMP#chore#analisar_codigo_funcionalidades_centrais, documentar as divergências das Funcionalidades Centrais e Estruturais. Detalhar funcionalidade, origem e impacto.",
+      "status": "Pending",
+      "parentTaskId": "040#feat#identificar_divergencias",
+      "dependencies": ["TEMP#chore#analisar_codigo_funcionalidades_centrais"],
+      "tags": ["documentacao", "core", "ui", "estado", "divergencia"],
+      "acceptance_criteria_for_delegation": "Seção no relatório de divergências para as Funcionalidades Centrais e Estruturais: 1. Descrição. 2. Comparativo. 3. Origem. 4. Impacto.",
+      "suggested_mode_for_delegation": "docu-crafter",
+      "context_for_delegation": {
+        "input_task_output_path": ".state/tasks/TEMP#chore#analisar_codigo_funcionalidades_centrais.json",
+        "specification_file_path": ".state/specs/040#feat#identificar_divergencias_spec.md",
+        "todo_md_content": "1 | Arquitetura Proposta com Supabase A nova arquitetura utilizará o Supabase como backend principal, aproveitando seus serviços integrados: Supabase Auth: Para gerenciamento completo de autenticação (registro, login com email/senha, login social como Google, logout, gerenciamento de sessão JWT). Supabase Database: Um banco de dados PostgreSQL para armazenar todos os dados da aplicação de forma estruturada e segura. Supabase Realtime: Para sincronização de dados em tempo real entre dispositivos, atualizando a interface do usuário instantaneamente quando os dados mudam no backend. Supabase Client Library (supabase-js): SDK para interagir com os serviços do Supabase no frontend e backend (se necessário em rotas de API Next.js). 3.1."
+      }
+    },
+    {
+      "taskId": "TEMP#chore#consolidar_relatorio_divergencias",
+      "description": "Consolidar os outputs das tarefas de documentação de divergências (TEMP#docs#...) em um único relatório markdown. O relatório deve apresentar uma visão geral das divergências e, em seguida, detalhar cada uma conforme documentado.",
+      "status": "Pending",
+      "parentTaskId": "040#feat#identificar_divergencias",
+      "dependencies": [
+        "TEMP#docs#documentar_divergencias_modulos_pessoais",
+        "TEMP#docs#documentar_divergencias_modulos_produtividade",
+        "TEMP#docs#documentar_divergencia_modulo_financas",
+        "TEMP#docs#documentar_divergencia_modulo_receitas",
+        "TEMP#docs#documentar_divergencias_funcionalidades_centrais"
+      ],
+      "tags": ["documentacao", "relatorio", "consolidacao"],
+      "acceptance_criteria_for_delegation": "Um arquivo markdown único (`.state/reports/040#feat#identificar_divergencias_report.md`) contendo: 1. Introdução sobre o processo de identificação de divergências. 2. Sumário das principais áreas de divergência. 3. Seções detalhadas para cada área de divergência, incorporando os relatórios individuais produzidos pelas tarefas TEMP#docs#... . 4. Conclusão geral sobre o estado do 'todo.md' versus o projeto.",
+      "suggested_mode_for_delegation": "docu-crafter",
+      "context_for_delegation": {
+        "input_task_output_paths": [
+          ".state/tasks/TEMP#docs#documentar_divergencias_modulos_pessoais.json",
+          ".state/tasks/TEMP#docs#documentar_divergencias_modulos_produtividade.json",
+          ".state/tasks/TEMP#docs#documentar_divergencia_modulo_financas.json",
+          ".state/tasks/TEMP#docs#documentar_divergencia_modulo_receitas.json",
+          ".state/tasks/TEMP#docs#documentar_divergencias_funcionalidades_centrais.json"
+        ],
+        "specification_file_path": ".state/specs/040#feat#identificar_divergencias_spec.md",
+        "output_report_path": ".state/reports/040#feat#identificar_divergencias_report.md"
+      }
+    }
+  ],
+  "task_output": null,
+  "error_message": null
+}

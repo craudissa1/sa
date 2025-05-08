@@ -8,6 +8,7 @@ import { Textarea } from '../ui/Textarea';
 import { Select } from '../ui/Select';
 import { TagInput } from '../ui/TagInput';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 // Define types for form state management
 type IngredienteForm = { nome: string; quantidade: string; unidade: string }; // Use string for quantity input
@@ -324,10 +325,11 @@ export function AdicionarReceitaForm({ receitaParaEditar, aoFinalizar }: Adicion
           />
           {previewImagem && (
             <div className="mt-4 relative h-48 w-full max-w-sm border rounded overflow-hidden">
-              <img
+              <Image
                 src={previewImagem}
                 alt="Preview da Receita"
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
               />
                <Button
                   type="button"
