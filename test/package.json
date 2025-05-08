@@ -1,0 +1,33 @@
+{
+  "type": "commonjs",
+  "scripts": {
+    "test": "jest",
+    "test:auth": "jest integration/supabase-auth",
+    "test:migration": "jest integration/supabase-migration",
+    "test:components": "jest components/supabase-components",
+    "test:e2e": "jest e2e/supabase-e2e"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": [
+      "<rootDir>/setup/jest-setup.js"
+    ],
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/../app/$1"
+    },
+    "transform": {
+      "^.+\\.(js|jsx|ts|tsx)$": ["babel-jest", { "configFile": "./setup/babel.config.js" }]
+    }
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@babel/preset-env": "^7.24.0",
+    "@babel/preset-react": "^7.24.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
+}
