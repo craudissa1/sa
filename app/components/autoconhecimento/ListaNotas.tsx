@@ -1,150 +1,181 @@
-'use client'
+"use client";
 
-import { useState, useMemo } from 'react'
-import { useAutoconhecimentoStore } from '@/app/stores/autoconhecimentoStore'
-import { Card } from '@/app/components/ui/Card'
-import { Badge } from '@/app/components/ui/Badge'
-import { Input } from '@/app/components/ui/Input'
-import { Search, Edit, Trash2, Image as ImageIcon } from 'lucide-react'
+import { useState, useMemo, useEffect } from "react"; // Adicionado useEffect
+import { useAutoconhecimentoStore, NotaAutoconhecimento } from "@/app/stores/autoconhecimentoStore";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/app/components/ui/Card"; // Assumindo que Card.tsx exporta estes
+import { Badge } from "@/app/components/ui/Badge";
+import { Input } from "@/app/components/ui/Input";
+import { Button } from "@/app/components/ui/Button";
+import { Search, Edit, Trash2, Image as ImageIcon, Loader2, PlusCircle } from "lucide-react";
+import { useAuth } from "@/app/context/AuthContext";
 
 type ListaNotasProps = {
-  secaoAtual: 'quem-sou' | 'meus-porques' | 'meus-padroes'
-  onSelectNota: (id: string) => void
-}
+  secaoAtual: "quem-sou" | "meus-porques" | "meus-padroes";
+  onSelectNota: (id: string) => void;
+  onAddNewNota: () => void; // Para abrir o editor para uma nova nota
+};
 
-export function ListaNotas({ secaoAtual, onSelectNota }: ListaNotasProps) {
-  const { notas, removerNota, buscarNotas, modoRefugio } = useAutoconhecimentoStore()
-  const [termoBusca, setTermoBusca] = useState('')
-  
-  // Filtrar notas da seção atual
-  const notasSecao = useMemo(() => {
-    const notasFiltradas = termoBusca 
-      ? buscarNotas(termoBusca) 
-      : notas
-    
-    return notasFiltradas
-      .filter(nota => nota.secao === secaoAtual)
-      .sort((a, b) => new Date(b.dataAtualizacao).getTime() - new Date(a.dataAtualizacao).getTime())
-  }, [notas, secaoAtual, termoBusca, buscarNotas])
-  
-  // Função para lidar com a exclusão
-  const handleRemoverNota = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    
-    if (window.confirm('Tem certeza que deseja excluir esta nota?')) {
-      removerNota(id)
+export function ListaNotas({ secaoAtual, onSelectNota, onAddNewNota }: ListaNotasProps) {
+  const { user } = useAuth();
+  const { notas, removerNota, modoRefugio, fetchNotasAutoconhecimento } = useAutoconhecimentoStore();
+  const [termoBusca, setTermoBusca] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user && notas.length === 0) {
+        setLoading(true);
+        fetchNotasAutoconhecimento(user.id).finally(() => setLoading(false));
     }
+  }, [user, notas, fetchNotasAutoconhecimento]);
+
+  const notasSecao = useMemo(() => {
+    const notasDaSecao = notas.filter((nota) => nota.secao === secaoAtual);
+    if (!termoBusca.trim()) {
+      return notasDaSecao.sort((a, b) => new Date(b.updated_at || b.created_at!).getTime() - new Date(a.updated_at || a.created_at!).getTime());
+    }
+    const termoLower = termoBusca.toLowerCase();
+    return notasDaSecao
+      .filter(
+        (nota) =>
+          nota.titulo.toLowerCase().includes(termoLower) ||
+          nota.conteudo.toLowerCase().includes(termoLower) ||
+          (nota.tags && nota.tags.some((tag) => tag.toLowerCase().includes(termoLower)))
+      )
+      .sort((a, b) => new Date(b.updated_at || b.created_at!).getTime() - new Date(a.updated_at || a.created_at!).getTime());
+  }, [notas, secaoAtual, termoBusca]);
+
+  const handleRemoverNota = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm("Tem certeza que deseja excluir esta nota?")) {
+      setLoading(true);
+      try {
+        await removerNota(id);
+      } catch (error) {
+        console.error("Erro ao remover nota:", error);
+        // Adicionar feedback ao usuário
+      }
+      setLoading(false);
+    }
+  };
+
+  const formatarData = (dataString?: string) => {
+    if (!dataString) return "Data desconhecida";
+    try {
+        const data = new Date(dataString);
+        return data.toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        });
+    } catch (e) {
+        return "Data inválida";
+    }
+  };
+
+  const interfaceSimplificada = modoRefugio;
+
+  if (!user) {
+    return <p className="text-center text-muted-foreground py-4">Faça login para ver suas notas.</p>;
   }
   
-  // Formatação de data
-  const formatarData = (dataString: string) => {
-    const data = new Date(dataString)
-    return data.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    })
+  if (loading && notas.length === 0) {
+      return <div className="flex justify-center items-center p-10"><Loader2 className="animate-spin" size={32}/></div>
   }
-  
-  // Verifica se estamos no modo refúgio para simplificar a interface
-  const interfaceSimplificada = modoRefugio
-  
+
   return (
     <div className="space-y-4">
-      {/* Barra de busca */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-        <Input
-          type="text"
-          placeholder="Buscar notas..."
-          value={termoBusca}
-          onChange={(e) => setTermoBusca(e.target.value)}
-          className="pl-10"
-          aria-label="Buscar notas"
-        />
+      <div className="flex gap-2 items-center">
+        <div className="relative flex-grow">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
+          <Input
+            type="text"
+            placeholder="Buscar notas..."
+            value={termoBusca}
+            onChange={(e) => setTermoBusca(e.target.value)}
+            className="pl-10"
+            aria-label="Buscar notas"
+          />
+        </div>
+        <Button onClick={onAddNewNota} className="flex-shrink-0">
+            <PlusCircle size={18} className="mr-2"/>
+            Nova Nota
+        </Button>
       </div>
-      
-      {/* Lista de notas */}
-      <div className="space-y-3">
-        {notasSecao.length === 0 ? (
-          <p className="text-center text-gray-500 dark:text-gray-400 py-4">
-            {termoBusca 
-              ? 'Nenhuma nota encontrada para esta busca' 
-              : 'Nenhuma nota registrada nesta seção ainda'}
-          </p>
-        ) : (
-          notasSecao.map((nota) => (
+
+      {notasSecao.length === 0 ? (
+        <p className="text-center text-muted-foreground py-6">
+          {termoBusca
+            ? "Nenhuma nota encontrada para esta busca."
+            : "Nenhuma nota registrada nesta seção ainda. Que tal criar uma?"}
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {notasSecao.map((nota) => (
             <Card
               key={nota.id}
-              className={`${
-                interfaceSimplificada ? 'opacity-90' : ''
-              }`}
+              className={`flex flex-col justify-between cursor-pointer hover:shadow-lg transition-shadow duration-200 ${interfaceSimplificada ? "opacity-90 border-primary/50" : ""}`}
+              onClick={() => onSelectNota(nota.id!)}
             >
-              <div 
-                className="p-4 cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-autoconhecimento-primary"
-                onClick={() => onSelectNota(nota.id)}
-              >
-                <div className="flex justify-between items-start">
-                  <h4 className="text-lg font-medium text-gray-800 dark:text-white line-clamp-1">
-                    {nota.titulo}
-                  </h4>
-                  
-                  <div className="flex space-x-1">
-                    {!interfaceSimplificada && (
-                      <>
-                        <button
-                          className="p-1 text-gray-500 hover:text-autoconhecimento-primary transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onSelectNota(nota.id)
-                          }}
-                          aria-label="Editar nota"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          className="p-1 text-gray-500 hover:text-red-500 transition-colors"
-                          onClick={(e) => handleRemoverNota(nota.id, e)}
-                          aria-label="Excluir nota"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-                
-                <p className="text-gray-600 dark:text-gray-300 text-sm mt-2 line-clamp-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg line-clamp-2">{nota.titulo}</CardTitle>
+                <CardDescription className="text-xs">
+                  Atualizado em {formatarData(nota.updated_at || nota.created_at)}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow pb-3">
+                <p className="text-sm text-muted-foreground line-clamp-3">
                   {nota.conteudo}
                 </p>
-                
-                {!interfaceSimplificada && nota.tags.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1">
-                    {nota.tags.map((tag) => (
-                      <Badge 
+                {!interfaceSimplificada && nota.tags && nota.tags.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {nota.tags.slice(0, 3).map((tag) => (
+                      <Badge
                         key={tag}
-                        className="bg-autoconhecimento-light text-autoconhecimento-primary px-2 py-0.5 text-xs"
+                        variant="secondary"
+                        className="text-xs bg-primary/10 text-primary"
                       >
                         {tag}
                       </Badge>
                     ))}
+                    {nota.tags.length > 3 && <Badge variant="outline" className="text-xs">+{nota.tags.length - 3}</Badge>}
                   </div>
                 )}
-                
-                <div className="mt-2 flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-                  <span>Atualizado em {formatarData(nota.dataAtualizacao)}</span>
-                  {nota.imagemUrl && (
-                    <span className="flex items-center">
-                      <ImageIcon size={12} className="mr-1" />
-                      <span>Âncora visual</span>
-                    </span>
-                  )}
+              </CardContent>
+              <CardFooter className="flex justify-between items-center pt-3 border-t">
+                <div className="flex items-center text-xs text-muted-foreground">
+                    {nota.imagemUrl && (
+                        <ImageIcon size={14} className="mr-1.5 text-primary/70" />
+                    )}
                 </div>
-              </div>
+                <div className="flex space-x-1">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectNota(nota.id!);
+                        }}
+                        aria-label="Editar nota"
+                        >
+                        <Edit size={16} />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={(e) => handleRemoverNota(nota.id!, e)}
+                        aria-label="Excluir nota"
+                        >
+                        <Trash2 size={16} />
+                    </Button>
+                </div>
+              </CardFooter>
             </Card>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
-  )
+  );
 }
+

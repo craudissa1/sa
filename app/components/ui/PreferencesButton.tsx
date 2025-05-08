@@ -8,17 +8,59 @@ import { usePerfilStore } from '@/app/stores/perfilStore'
 
 export function PreferencesButton() {
   const [isOpen, setIsOpen] = useState(false)
-  const {
-    preferenciasVisuais,
-    atualizarPreferenciasVisuais,
-    notificacoesAtivas,
-    alternarNotificacoes,
-    pausasAtivas,
-    alternarPausas
-  } = usePerfilStore()
+  const perfilStore = usePerfilStore()
+  const perfil = perfilStore.perfil || {
+    preferenciasVisuais: {
+      altoContraste: false,
+      reducaoEstimulos: false,
+      textoGrande: false
+    },
+    notificacoesAtivas: true,
+    pausasAtivas: true
+  }
 
   function toggleModal() {
     setIsOpen(!isOpen)
+  }
+  
+  // Funções para manipular preferências
+  const toggleAltoContraste = () => {
+    perfilStore.updatePerfil({
+      preferenciasVisuais: {
+        ...perfil.preferenciasVisuais,
+        altoContraste: !perfil.preferenciasVisuais.altoContraste
+      }
+    })
+  }
+  
+  const toggleReducaoEstimulos = () => {
+    perfilStore.updatePerfil({
+      preferenciasVisuais: {
+        ...perfil.preferenciasVisuais,
+        reducaoEstimulos: !perfil.preferenciasVisuais.reducaoEstimulos
+      }
+    })
+  }
+  
+  const toggleTextoGrande = () => {
+    perfilStore.updatePerfil({
+      preferenciasVisuais: {
+        ...perfil.preferenciasVisuais,
+        textoGrande: !perfil.preferenciasVisuais.textoGrande
+      }
+    })
+  }
+  
+  const toggleNotificacoes = () => {
+    perfilStore.updatePerfil({
+      notificacoesAtivas: !perfil.notificacoesAtivas
+    })
+  }
+  
+  const togglePausas = () => {
+    perfilStore.updatePerfil({
+      pausasAtivas: !perfil.pausasAtivas
+    })
   }
 
   return (
@@ -49,20 +91,18 @@ export function PreferencesButton() {
               
               <div className="grid grid-cols-1 gap-3">
                 <button
-                  onClick={() => atualizarPreferenciasVisuais({ 
-                    altoContraste: !preferenciasVisuais.altoContraste 
-                  })}
+                  onClick={toggleAltoContraste}
                   className={`flex items-center justify-between p-3 rounded-lg border ${
-                    preferenciasVisuais.altoContraste
+                    perfil.preferenciasVisuais.altoContraste
                       ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800'
                       : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'
                   }`}
-                  aria-pressed={preferenciasVisuais.altoContraste}
+                  aria-pressed={perfil.preferenciasVisuais.altoContraste}
                   tabIndex={0}
                 >
                   <div className="flex items-center">
                     <div className={`p-2 rounded-md ${
-                      preferenciasVisuais.altoContraste
+                      perfil.preferenciasVisuais.altoContraste
                         ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-200'
                         : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                     }`}>
@@ -78,11 +118,11 @@ export function PreferencesButton() {
                     </div>
                   </div>
                   <div className={`h-5 w-5 rounded-full ${
-                    preferenciasVisuais.altoContraste
+                    perfil.preferenciasVisuais.altoContraste
                       ? 'bg-blue-500'
                       : 'bg-gray-200 dark:bg-gray-600'
                   }`}>
-                    {preferenciasVisuais.altoContraste && (
+                    {perfil.preferenciasVisuais.altoContraste && (
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
@@ -91,20 +131,18 @@ export function PreferencesButton() {
                 </button>
 
                 <button
-                  onClick={() => atualizarPreferenciasVisuais({ 
-                    reducaoEstimulos: !preferenciasVisuais.reducaoEstimulos 
-                  })}
+                  onClick={toggleReducaoEstimulos}
                   className={`flex items-center justify-between p-3 rounded-lg border ${
-                    preferenciasVisuais.reducaoEstimulos
+                    perfil.preferenciasVisuais.reducaoEstimulos
                       ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800'
                       : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'
                   }`}
-                  aria-pressed={preferenciasVisuais.reducaoEstimulos}
+                  aria-pressed={perfil.preferenciasVisuais.reducaoEstimulos}
                   tabIndex={0}
                 >
                   <div className="flex items-center">
                     <div className={`p-2 rounded-md ${
-                      preferenciasVisuais.reducaoEstimulos
+                      perfil.preferenciasVisuais.reducaoEstimulos
                         ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-200'
                         : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                     }`}>
@@ -120,11 +158,11 @@ export function PreferencesButton() {
                     </div>
                   </div>
                   <div className={`h-5 w-5 rounded-full ${
-                    preferenciasVisuais.reducaoEstimulos
+                    perfil.preferenciasVisuais.reducaoEstimulos
                       ? 'bg-blue-500'
                       : 'bg-gray-200 dark:bg-gray-600'
                   }`}>
-                    {preferenciasVisuais.reducaoEstimulos && (
+                    {perfil.preferenciasVisuais.reducaoEstimulos && (
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
@@ -133,20 +171,18 @@ export function PreferencesButton() {
                 </button>
 
                 <button
-                  onClick={() => atualizarPreferenciasVisuais({ 
-                    textoGrande: !preferenciasVisuais.textoGrande 
-                  })}
+                  onClick={toggleTextoGrande}
                   className={`flex items-center justify-between p-3 rounded-lg border ${
-                    preferenciasVisuais.textoGrande
+                    perfil.preferenciasVisuais.textoGrande
                       ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800'
                       : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'
                   }`}
-                  aria-pressed={preferenciasVisuais.textoGrande}
+                  aria-pressed={perfil.preferenciasVisuais.textoGrande}
                   tabIndex={0}
                 >
                   <div className="flex items-center">
                     <div className={`p-2 rounded-md ${
-                      preferenciasVisuais.textoGrande
+                      perfil.preferenciasVisuais.textoGrande
                         ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-200'
                         : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                     }`}>
@@ -162,11 +198,11 @@ export function PreferencesButton() {
                     </div>
                   </div>
                   <div className={`h-5 w-5 rounded-full ${
-                    preferenciasVisuais.textoGrande
+                    perfil.preferenciasVisuais.textoGrande
                       ? 'bg-blue-500'
                       : 'bg-gray-200 dark:bg-gray-600'
                   }`}>
-                    {preferenciasVisuais.textoGrande && (
+                    {perfil.preferenciasVisuais.textoGrande && (
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
@@ -183,38 +219,38 @@ export function PreferencesButton() {
               
               <div className="grid grid-cols-1 gap-3">
                 <button
-                  onClick={alternarNotificacoes}
+                  onClick={toggleNotificacoes}
                   className={`flex items-center justify-between p-3 rounded-lg border ${
-                    notificacoesAtivas
+                    perfil.notificacoesAtivas
                       ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800'
                       : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'
                   }`}
-                  aria-pressed={notificacoesAtivas}
+                  aria-pressed={perfil.notificacoesAtivas}
                   tabIndex={0}
                 >
                   <div className="flex items-center">
                     <div className={`p-2 rounded-md ${
-                      notificacoesAtivas
+                      perfil.notificacoesAtivas
                         ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-200'
                         : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                     }`}>
-                      {notificacoesAtivas ? <BellRing className="h-5 w-5" /> : <BellOff className="h-5 w-5" />}
+                      {perfil.notificacoesAtivas ? <BellRing className="h-5 w-5" /> : <BellOff className="h-5 w-5" />}
                     </div>
                     <div className="ml-3">
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
                         Notificações
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {notificacoesAtivas ? 'Notificações ativadas' : 'Notificações desativadas'}
+                        {perfil.notificacoesAtivas ? 'Notificações ativadas' : 'Notificações desativadas'}
                       </p>
                     </div>
                   </div>
                   <div className={`h-5 w-5 rounded-full ${
-                    notificacoesAtivas
+                    perfil.notificacoesAtivas
                       ? 'bg-blue-500'
                       : 'bg-gray-200 dark:bg-gray-600'
                   }`}>
-                    {notificacoesAtivas && (
+                    {perfil.notificacoesAtivas && (
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
@@ -223,18 +259,18 @@ export function PreferencesButton() {
                 </button>
 
                 <button
-                  onClick={alternarPausas}
+                  onClick={togglePausas}
                   className={`flex items-center justify-between p-3 rounded-lg border ${
-                    pausasAtivas
+                    perfil.pausasAtivas
                       ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800'
                       : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'
                   }`}
-                  aria-pressed={pausasAtivas}
+                  aria-pressed={perfil.pausasAtivas}
                   tabIndex={0}
                 >
                   <div className="flex items-center">
                     <div className={`p-2 rounded-md ${
-                      pausasAtivas
+                      perfil.pausasAtivas
                         ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-200'
                         : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                     }`}>
@@ -245,16 +281,16 @@ export function PreferencesButton() {
                         Lembretes de Pausas
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {pausasAtivas ? 'Lembretes ativados' : 'Lembretes desativados'}
+                        {perfil.pausasAtivas ? 'Lembretes ativados' : 'Lembretes desativados'}
                       </p>
                     </div>
                   </div>
                   <div className={`h-5 w-5 rounded-full ${
-                    pausasAtivas
+                    perfil.pausasAtivas
                       ? 'bg-blue-500'
                       : 'bg-gray-200 dark:bg-gray-600'
                   }`}>
-                    {pausasAtivas && (
+                    {perfil.pausasAtivas && (
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>

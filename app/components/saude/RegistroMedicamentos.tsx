@@ -71,7 +71,7 @@ export function RegistroMedicamentos() {
     const medicamento = medicamentos.find(med => med.id === id);
     if (!medicamento) return;
     
-    setEditandoId(medicamento.id)
+    setEditandoId(medicamento.id || null)
     setNovoMedicamento({
       nome: medicamento.nome,
       dosagem: medicamento.dosagem,

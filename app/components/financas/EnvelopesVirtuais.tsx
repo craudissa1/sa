@@ -31,11 +31,12 @@ export function EnvelopesVirtuais() {
   const handleAdicionarEnvelope = () => {
     if (!novoEnvelope.nome || novoEnvelope.valorAlocado <= 0) return
     
-    adicionarEnvelope(
-      novoEnvelope.nome,
-      novoEnvelope.cor,
-      novoEnvelope.valorAlocado
-    )
+    adicionarEnvelope({
+      nome: novoEnvelope.nome,
+      cor: novoEnvelope.cor,
+      valorAlocado: novoEnvelope.valorAlocado,
+      valorUtilizado: 0 // Inicializa valorUtilizado como 0
+    });
     
     setNovoEnvelope({ nome: '', cor: '#2196F3', valorAlocado: 0 })
     setMostrarFormulario(false)
@@ -57,12 +58,11 @@ export function EnvelopesVirtuais() {
   const salvarEdicao = () => {
     if (!editando || !novoEnvelope.nome || novoEnvelope.valorAlocado <= 0) return
     
-    atualizarEnvelope(
-      editando,
-      novoEnvelope.nome,
-      novoEnvelope.cor,
-      novoEnvelope.valorAlocado
-    )
+    atualizarEnvelope(editando, {
+      nome: novoEnvelope.nome,
+      cor: novoEnvelope.cor,
+      valorAlocado: novoEnvelope.valorAlocado
+    });
     
     setNovoEnvelope({ nome: '', cor: '#2196F3', valorAlocado: 0 })
     setEditando(null)
@@ -108,14 +108,14 @@ export function EnvelopesVirtuais() {
                 </div>
                 <div className="flex space-x-1">
                   <button
-                    onClick={() => iniciarEdicao(envelope.id)}
+                    onClick={() => iniciarEdicao(envelope.id ?? "")}
                     className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                     aria-label={`Editar envelope ${envelope.nome}`}
                   >
                     <Edit2 className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => removerEnvelope(envelope.id)}
+                    onClick={() => removerEnvelope(envelope.id ?? "")}
                     className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                     aria-label={`Remover envelope ${envelope.nome}`}
                   >
@@ -147,7 +147,7 @@ export function EnvelopesVirtuais() {
                     <input
                       type="number"
                       value={valorGasto.valor || ''}
-                      onChange={e => setValorGasto({ id: envelope.id, valor: parseFloat(e.target.value) || 0 })}
+                      onChange={e => setValorGasto({ id: envelope.id ?? "", valor: parseFloat(e.target.value) || 0 })}
                       placeholder="Valor"
                       className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-l dark:bg-gray-700 dark:text-white text-sm"
                       min="0.01"
@@ -155,7 +155,7 @@ export function EnvelopesVirtuais() {
                       aria-label="Valor do gasto"
                     />
                     <button
-                      onClick={() => handleRegistrarGasto(envelope.id)}
+                      onClick={() => handleRegistrarGasto(envelope.id ?? "")}
                       className="px-2 py-1 bg-blue-500 text-white rounded-r hover:bg-blue-600 text-sm"
                       aria-label="Confirmar gasto"
                     >
@@ -171,7 +171,7 @@ export function EnvelopesVirtuais() {
                   </div>
                 ) : (
                   <button
-                    onClick={() => setValorGasto({ id: envelope.id, valor: 0 })}
+                    onClick={() => setValorGasto({ id: envelope.id ?? "", valor: 0 })}
                     className="w-full mt-2 px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md text-gray-600 dark:text-gray-300"
                     aria-label={`Registrar gasto no envelope ${envelope.nome}`}
                   >

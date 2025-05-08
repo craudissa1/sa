@@ -31,10 +31,10 @@ export function RegistroEstudos() {
   }
 
   const iniciarEdicao = (sessao: SessaoEstudo) => {
-    setEditandoId(sessao.id)
+    setEditandoId(sessao.id || null)
     setNovaSessao({
       titulo: sessao.titulo,
-      descricao: sessao.descricao,
+      descricao: sessao.descricao || '',
       duracao: sessao.duracao,
     })
     setMostrarForm(true)
@@ -114,7 +114,7 @@ export function RegistroEstudos() {
             <div className="flex items-start justify-between">
               <div className="flex items-start">
                 <button
-                  onClick={() => alternarCompletar(sessao.id)}
+                  onClick={() => alternarCompletar(sessao.id || '', !sessao.completo)}
                   className={`mt-1 mr-3 flex-shrink-0 w-5 h-5 rounded-full border ${
                     sessao.completo
                       ? 'bg-green-500 border-green-500 text-white'
@@ -162,7 +162,7 @@ export function RegistroEstudos() {
                 </button>
                 
                 <button
-                  onClick={() => removerSessao(sessao.id)}
+                  onClick={() => removerSessao(sessao.id || '')}
                   className="p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                   aria-label="Remover sessão"
                 >

@@ -2,18 +2,17 @@
 
 import { useState, FormEvent } from 'react'
 import { ArrowRightCircle, Clock, Plus, Check, AlertCircle, RefreshCcw } from 'lucide-react'
-import { useHiperfocosStore, type SessaoAlternancia, type Hiperfoco } from '../../stores/hiperfocosStore'
+import { useHiperfocosStore, type HiperfocoSessao, type HiperfocoProjeto } from '../../stores/hiperfocosStore'
 import { format, parseISO, isAfter, addMinutes } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export function SistemaAlternancia() {
-  const { 
-    hiperfocos, 
-    sessoes, 
-    adicionarSessao, 
-    alternarHiperfoco, 
-    concluirSessao, 
-    removerSessao 
+  const {
+    hiperfocoProjetos, 
+    hiperfocoSessoes, 
+    adicionarHiperfocoSessao, 
+    atualizarHiperfocoSessao, // Adicionado para concluir e alternar
+    removerHiperfocoSessao 
   } = useHiperfocosStore()
   
   const [novaAlternancia, setNovaAlternancia] = useState({
@@ -26,7 +25,7 @@ export function SistemaAlternancia() {
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null)
   
   // Obter sessões ativas (não concluídas)
-  const sessoesAtivas = sessoes.filter(sessao => !sessao.concluida)
+  const sessoesAtivas = hiperfocoSessoes.filter(sessao => !sessao.concluida)
   
   // Manipular o envio do formulário
   const handleSubmit = (e: FormEvent) => {
@@ -44,11 +43,14 @@ export function SistemaAlternancia() {
     }
     
     try {
-      adicionarSessao(
-        novaAlternancia.titulo,
-        novaAlternancia.hiperfocoId,
-        tempoEstimadoInt
-      )
+      adicionarHiperfocoSessao({
+        titulo: novaAlternancia.titulo,
+        hiperfoco_atual_id: novaAlternancia.hiperfocoId,
+        hiperfoco_anterior_id: null,
+        tempo_inicio: new Date().toISOString(),
+        duracao_estimada: tempoEstimadoInt,
+        concluida: false
+      });
       
       // Limpar o formulário
       setNovaAlternancia({
@@ -68,21 +70,33 @@ export function SistemaAlternancia() {
   const getHiperfocoNome = (id: string | null): string => {
     if (!id) return 'Nenhum'
     
-    const hiperfoco = hiperfocos.find(h => h.id === id)
+    const hiperfoco = hiperfocoProjetos.find(h => h.id === id)
     return hiperfoco ? hiperfoco.titulo : 'Desconhecido'
   }
   
   // Verificar se uma sessão está atrasada
-  const isSessionOverdue = (sessao: SessaoAlternancia): boolean => {
-    const inicioDate = parseISO(sessao.tempoInicio)
-    const limiteDate = addMinutes(inicioDate, sessao.duracaoEstimada)
+  const isSessionOverdue = (sessao: HiperfocoSessao): boolean => {
+    const inicioDate = parseISO(sessao.tempo_inicio)
+    const limiteDate = addMinutes(inicioDate, sessao.duracao_estimada)
     return isAfter(new Date(), limiteDate)
   }
   
-  // Alternar para um novo hiperfoco
-  const handleAlternarHiperfoco = (sessaoId: string, hiperfocoId: string) => {
-    alternarHiperfoco(sessaoId, hiperfocoId)
+  // Concluir uma sessão
+  const handleConcluirSessao = (sessaoId: string) => {
+    atualizarHiperfocoSessao(sessaoId, { concluida: true });
   }
+  
+  // Alternar para um novo hiperfoco
+  const handleAlternarHiperfoco = (sessaoId: string, novoHiperfocoId: string) => {
+    const sessaoAtual = hiperfocoSessoes.find(s => s.id === sessaoId);
+    if (sessaoAtual) {
+      atualizarHiperfocoSessao(sessaoId, { 
+        hiperfoco_anterior_id: sessaoAtual.hiperfoco_atual_id,
+        hiperfoco_atual_id: novoHiperfocoId,
+        tempo_inicio: new Date().toISOString() // Opcional: resetar tempo ao alternar
+      });
+    }
+  };
   
   return (
     <div>
@@ -114,7 +128,7 @@ export function SistemaAlternancia() {
           
           {sessoesAtivas.map((sessao) => {
             const isOverdue = isSessionOverdue(sessao)
-            const hiperfocoAtual = hiperfocos.find(h => h.id === sessao.hiperfocoAtual)
+            const hiperfocoAtual = hiperfocoProjetos.find(h => h.id === sessao.hiperfoco_atual_id)
             
             return (
               <div 
@@ -130,13 +144,13 @@ export function SistemaAlternancia() {
                     </h4>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       <Clock className="h-4 w-4 inline mr-1" aria-hidden="true" />
-                      Iniciado: {format(parseISO(sessao.tempoInicio), "dd 'de' MMMM', às' HH:mm", { locale: ptBR })}
+                      Iniciado: {format(parseISO(sessao.tempo_inicio), "dd 'de' MMMM', às' HH:mm", { locale: ptBR })}
                     </p>
                   </div>
                   
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => concluirSessao(sessao.id)}
+                      onClick={() => handleConcluirSessao(sessao.id ?? "")}
                       className="p-1.5 text-green-600 hover:bg-green-50 rounded-md dark:text-green-400 dark:hover:bg-gray-600"
                       aria-label="Marcar como concluída"
                     >
@@ -158,7 +172,7 @@ export function SistemaAlternancia() {
                         color: hiperfocoAtual ? hiperfocoAtual.cor : 'inherit' 
                       }}
                     >
-                      {getHiperfocoNome(sessao.hiperfocoAtual)}
+                      {getHiperfocoNome(sessao.hiperfoco_atual_id)}
                     </div>
                   </div>
                   
@@ -170,12 +184,12 @@ export function SistemaAlternancia() {
                     <select
                       className="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-hiperfocos-primary focus:border-hiperfocos-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
                       value=""
-                      onChange={(e) => handleAlternarHiperfoco(sessao.id, e.target.value)}
+                      onChange={(e) => handleAlternarHiperfoco(sessao.id ?? '', e.target.value ?? '')}
                       aria-label="Selecionar novo hiperfoco"
                     >
                       <option value="" disabled>Escolha um hiperfoco</option>
-                      {hiperfocos
-                        .filter(h => h.id !== sessao.hiperfocoAtual)
+                      {hiperfocoProjetos
+                        .filter(h => h.id !== sessao.hiperfoco_atual_id)
                         .map(hiperfoco => (
                           <option key={hiperfoco.id} value={hiperfoco.id}>
                             {hiperfoco.titulo}
@@ -187,10 +201,10 @@ export function SistemaAlternancia() {
                 </div>
                 
                 {/* Hiperfoco anterior (se houver) */}
-                {sessao.hiperfocoAnterior && (
+                {sessao.hiperfoco_anterior_id && (
                   <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
                     <ArrowRightCircle className="h-4 w-4 inline mr-1" aria-hidden="true" />
-                    Alternou de: {getHiperfocoNome(sessao.hiperfocoAnterior)}
+                    Alternou de: {getHiperfocoNome(sessao.hiperfoco_anterior_id)}
                   </div>
                 )}
                 
@@ -198,7 +212,7 @@ export function SistemaAlternancia() {
                 {isOverdue && (
                   <div className="mt-3 text-sm text-amber-500 dark:text-amber-400">
                     <AlertCircle className="h-4 w-4 inline mr-1" aria-hidden="true" />
-                    Tempo estimado excedido! ({sessao.duracaoEstimada} minutos)
+                    Tempo estimado excedido! ({sessao.duracao_estimada} minutos)
                   </div>
                 )}
               </div>
@@ -250,7 +264,7 @@ export function SistemaAlternancia() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-hiperfocos-primary focus:border-hiperfocos-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
                 <option value="">Selecione um hiperfoco</option>
-                {hiperfocos.map(hiperfoco => (
+                {hiperfocoProjetos.map(hiperfoco => (
                   <option key={hiperfoco.id} value={hiperfoco.id}>
                     {hiperfoco.titulo}
                   </option>
@@ -297,14 +311,14 @@ export function SistemaAlternancia() {
         <button
           onClick={() => setMostrarFormulario(true)}
           className="flex items-center px-4 py-2 mb-6 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-hiperfocos-primary hover:bg-hiperfocos-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-hiperfocos-primary"
-          disabled={hiperfocos.length === 0}
+          disabled={hiperfocoProjetos.length === 0}
         >
           <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
           Nova Sessão de Alternância
         </button>
       )}
       
-      {hiperfocos.length === 0 && (
+      {hiperfocoProjetos.length === 0 && (
         <div className="text-center py-4 text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-600 rounded-md">
           <p>
             Para criar uma sessão de alternância, primeiro crie hiperfocos

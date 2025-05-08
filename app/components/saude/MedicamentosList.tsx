@@ -161,7 +161,7 @@ export function MedicamentosList({
                   <Button
                     size="icon"
                     variant={tomadoHoje ? "success" : "primary"}
-                    onClick={() => onRegistrarTomada(medicamento.id)}
+                    onClick={() => medicamento.id && onRegistrarTomada(medicamento.id)}
                     disabled={!liberadoParaTomar}
                     aria-label="Registrar dose tomada"
                   >
@@ -172,7 +172,7 @@ export function MedicamentosList({
                 <Button
                   size="icon"
                   variant="outline"
-                  onClick={() => onEdit(medicamento.id)}
+                  onClick={() => medicamento.id && onEdit(medicamento.id)}
                   aria-label="Editar medicamento"
                 >
                   <Edit className="h-4 w-4" />
@@ -182,7 +182,7 @@ export function MedicamentosList({
                   size="icon"
                   variant="outline"
                   color="danger"
-                  onClick={() => onDelete(medicamento.id)}
+                  onClick={() => medicamento.id && onDelete(medicamento.id)}
                   aria-label="Excluir medicamento"
                 >
                   <Trash2 className="h-4 w-4" />

@@ -114,35 +114,35 @@ export function ListaCompras() {
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {receitas.map(receita => (
+            {receitas.filter(r => !!r.id).map(receita => (
               <div
-                key={receita.id}
+                key={receita.id!}
                 className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
-                  receitasSelecionadas.includes(receita.id)
+                  receitasSelecionadas.includes(receita.id!)
                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 shadow-sm'
                     : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
-                onClick={() => toggleReceitaSelecionada(receita.id)}
+                onClick={() => toggleReceitaSelecionada(receita.id!)}
               >
                 <div className="flex items-start gap-3">
                   <Checkbox
-                    id={`receita-${receita.id}`}
-                    checked={receitasSelecionadas.includes(receita.id)}
+                    id={`receita-${receita.id!}`}
+                    checked={receitasSelecionadas.includes(receita.id!)}
                     onChange={() => {}} // Click handled by container
                     className="mt-1"
                   />
                   <div className="flex-grow">
-                    <label htmlFor={`receita-${receita.id}`} className="font-medium cursor-pointer">{receita.nome}</label>
-                    {receitasSelecionadas.includes(receita.id) && (
+                    <label htmlFor={`receita-${receita.id!}`} className="font-medium cursor-pointer">{receita.nome}</label>
+                    {receitasSelecionadas.includes(receita.id!) && (
                       <div className="mt-2 flex items-center gap-2">
-                        <label htmlFor={`porcoes-${receita.id}`} className="text-sm">Porções:</label>
+                        <label htmlFor={`porcoes-${receita.id!}`} className="text-sm">Porções:</label>
                         <Input
-                          id={`porcoes-${receita.id}`}
+                          id={`porcoes-${receita.id!}`}
                           type="number"
-                          value={porcoes[receita.id] || String(receita.porcoes || 1)}
+                          value={porcoes[receita.id!] || String(receita.porcoes || 1)}
                           onChange={(e) => {
                             e.stopPropagation(); // Prevent card click
-                            atualizarPorcoes(receita.id, e.target.value);
+                            atualizarPorcoes(receita.id!, e.target.value);
                           }}
                           onClick={(e) => e.stopPropagation()} // Prevent card click
                           min={1}

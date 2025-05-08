@@ -82,12 +82,12 @@ export function CalendarioPagamentos() {
       !novoPagamento.categoriaId
     ) return
     
-    adicionarPagamentoRecorrente(
-      novoPagamento.descricao,
-      novoPagamento.valor,
-      novoPagamento.dataVencimento,
-      novoPagamento.categoriaId
-    )
+    adicionarPagamentoRecorrente({
+      descricao: novoPagamento.descricao,
+      valor: novoPagamento.valor,
+      dataVencimento: novoPagamento.dataVencimento,
+      categoriaId: novoPagamento.categoriaId
+    });
     
     setNovoPagamento({
       descricao: '',
@@ -122,7 +122,7 @@ export function CalendarioPagamentos() {
   useEffect(() => {
     // Inicializar a categoriaId se estiver vazia e houver categorias disponíveis
     if (!novoPagamento.categoriaId && categorias.length > 0) {
-      setNovoPagamento(prev => ({ ...prev, categoriaId: categorias[0].id }))
+      setNovoPagamento(prev => ({ ...prev, categoriaId: categorias[0].id ?? "" }))
     }
   }, [categorias, novoPagamento.categoriaId])
   
@@ -204,7 +204,7 @@ export function CalendarioPagamentos() {
                     </div>
                     
                     <button
-                      onClick={() => marcarPagamentoComoPago(pagamento.id, !pagamento.pago)}
+                      onClick={() => marcarPagamentoComoPago(pagamento.id ?? "", !pagamento.pago)}
                       className={`p-1 rounded-full ${
                         pagamento.pago 
                           ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300' 

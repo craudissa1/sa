@@ -86,7 +86,7 @@ export function ListaPrioridades() {
   // Função para salvar edição
   const salvarEdicao = () => {
     if (prioridadeEditando && textoEditando.trim()) {
-      editarPrioridade(prioridadeEditando.id, textoEditando)
+      editarPrioridade(prioridadeEditando.id ?? '', { texto: textoEditando })
       setPrioridadeEditando(null)
     }
   }
@@ -184,7 +184,7 @@ export function ListaPrioridades() {
             >
               {isToday() && (
                 <button
-                  onClick={() => toggleConcluida(prioridade.id)}
+                  onClick={() => toggleConcluida(prioridade.id ?? '', !prioridade.concluida)}
                   className="mr-3 text-green-600 dark:text-green-400 focus:outline-none"
                   aria-label={prioridade.concluida ? 'Marcar como não concluída' : 'Marcar como concluída'}
                 >

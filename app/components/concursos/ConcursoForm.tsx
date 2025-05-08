@@ -1,100 +1,160 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Button } from '@/app/components/ui/Button';
-import { Input } from '@/app/components/ui/Input';
-import { Modal } from '@/app/components/ui/Modal';
-import { Calendar, Plus, X } from 'lucide-react';
-import { useConcursosStore, type Concurso } from '@/app/stores/concursosStore';
+import React, { useState, useEffect } from "react"; // Adicionado useEffect
+import { Button } from "@/app/components/ui/Button";
+import { Input } from "@/app/components/ui/Input";
+import { Modal } from "@/app/components/ui/Modal";
+import { Plus, X, Loader2 } from "lucide-react"; // Adicionado Loader2
+import { useConcursosStore, type Concurso, type ConteudoProgramatico } from "@/app/stores/concursosStore";
+import { useAuth } from "@/app/context/AuthContext";
 
 interface ConcursoFormProps {
   isOpen: boolean;
   onClose: () => void;
-  concursoParaEditar?: Concurso;
+  concursoParaEditar?: Concurso | null; // Permitir null para resetar
 }
 
 export function ConcursoForm({ isOpen, onClose, concursoParaEditar }: ConcursoFormProps) {
-  const { adicionarConcurso, atualizarConcurso } = useConcursosStore();
-  const [formData, setFormData] = useState({
-    titulo: concursoParaEditar?.titulo || '',
-    organizadora: concursoParaEditar?.organizadora || '',
-    dataInscricao: concursoParaEditar?.dataInscricao || '',
-    dataProva: concursoParaEditar?.dataProva || '',
-    edital: concursoParaEditar?.edital || '',
-    status: concursoParaEditar?.status || 'planejado',
-    conteudoProgramatico: concursoParaEditar?.conteudoProgramatico || []
-  });
+  const { user } = useAuth();
+  const { adicionarConcurso, atualizarConcurso, fetchConcursos } = useConcursosStore();
+  
+  const initialState = {
+    titulo: "",
+    organizadora: "",
+    dataInscricao: "",
+    dataProva: "",
+    edital: "", // Inicializado como string vazia
+    status: "planejado" as Concurso["status"],
+    conteudoProgramatico: [] as ConteudoProgramatico[],
+    user_id: user?.id || undefined
+  };
 
-  const [novaDisciplina, setNovaDisciplina] = useState('');
-  const [novoTopico, setNovoTopico] = useState('');
-  const [disciplinaSelecionada, setDisciplinaSelecionada] = useState('');
+  const [formData, setFormData] = useState<Omit<Concurso, "id" | "created_at" | "updated_at">>(initialState);
+  const [novaDisciplina, setNovaDisciplina] = useState("");
+  const [novoTopico, setNovoTopico] = useState("");
+  const [disciplinaSelecionadaParaTopico, setDisciplinaSelecionadaParaTopico] = useState("");
+  const [loading, setLoading] = useState(false);
   const [loadingExtracao, setLoadingExtracao] = useState(false);
   const [extracaoErro, setExtracaoErro] = useState<string | null>(null);
   const [extracaoSucesso, setExtracaoSucesso] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  useEffect(() => {
     if (concursoParaEditar) {
-      atualizarConcurso(concursoParaEditar.id, formData);
+      setFormData({
+        titulo: concursoParaEditar.titulo || "",
+        organizadora: concursoParaEditar.organizadora || "",
+        dataInscricao: concursoParaEditar.dataInscricao?.split("T")[0] || "", 
+        dataProva: concursoParaEditar.dataProva?.split("T")[0] || "", 
+        edital: concursoParaEditar.edital || "", // Garante que seja string
+        status: concursoParaEditar.status || "planejado",
+        conteudoProgramatico: concursoParaEditar.conteudoProgramatico || [],
+        user_id: concursoParaEditar.user_id || user?.id
+      });
     } else {
-      adicionarConcurso(formData);
+      setFormData({...initialState, user_id: user?.id});
     }
-    
-    onClose();
+  }, [concursoParaEditar, user, isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+        alert("Você precisa estar logado para realizar esta ação.");
+        return;
+    }
+    setLoading(true);
+    try {
+      const dadosParaSalvar = { ...formData, user_id: user.id }; 
+      if (concursoParaEditar && concursoParaEditar.id) {
+        await atualizarConcurso(concursoParaEditar.id, dadosParaSalvar);
+      } else {
+        await adicionarConcurso(dadosParaSalvar);
+      }
+      await fetchConcursos(user.id); 
+      onClose();
+    } catch (error) {
+      console.error("Erro ao salvar concurso:", error);
+      alert("Ocorreu um erro ao salvar o concurso. Tente novamente.");
+    }
+    setLoading(false);
   };
 
-  const adicionarDisciplina = () => {
+  const adicionarDisciplinaLocal = () => {
     if (!novaDisciplina.trim()) return;
-    
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       conteudoProgramatico: [
-        ...prev.conteudoProgramatico,
+        ...(prev.conteudoProgramatico || []),
         {
           disciplina: novaDisciplina,
           topicos: [],
-          progresso: 0
-        }
-      ]
+          progresso: 0,
+        },
+      ],
     }));
-    
-    setNovaDisciplina('');
+    setNovaDisciplina("");
   };
 
-  const adicionarTopico = () => {
-    if (!novoTopico.trim() || !disciplinaSelecionada) return;
-    
-    setFormData(prev => ({
+  const adicionarTopicoLocal = () => {
+    if (!novoTopico.trim() || !disciplinaSelecionadaParaTopico) return;
+    setFormData((prev) => ({
       ...prev,
-      conteudoProgramatico: prev.conteudoProgramatico.map(d =>
-        d.disciplina === disciplinaSelecionada
-          ? { ...d, topicos: [...d.topicos, novoTopico] }
+      conteudoProgramatico: (prev.conteudoProgramatico || []).map((d) =>
+        d.disciplina === disciplinaSelecionadaParaTopico
+          ? { ...d, topicos: [...(d.topicos || []), novoTopico] }
           : d
-      )
+      ),
     }));
-    
-    setNovoTopico('');
+    setNovoTopico("");
   };
 
-  const removerDisciplina = (disciplina: string) => {
-    setFormData(prev => ({
+  const removerDisciplinaLocal = (disciplinaARemover: string) => {
+    setFormData((prev) => ({
       ...prev,
-      conteudoProgramatico: prev.conteudoProgramatico.filter(
-        d => d.disciplina !== disciplina
-      )
+      conteudoProgramatico: (prev.conteudoProgramatico || []).filter(
+        (d) => d.disciplina !== disciplinaARemover
+      ),
     }));
   };
 
-  const removerTopico = (disciplina: string, topico: string) => {
-    setFormData(prev => ({
+  const removerTopicoLocal = (disciplinaDaQualRemover: string, topicoARemover: string) => {
+    setFormData((prev) => ({
       ...prev,
-      conteudoProgramatico: prev.conteudoProgramatico.map(d =>
-        d.disciplina === disciplina
-          ? { ...d, topicos: d.topicos.filter(t => t !== topico) }
+      conteudoProgramatico: (prev.conteudoProgramatico || []).map((d) =>
+        d.disciplina === disciplinaDaQualRemover
+          ? { ...d, topicos: (d.topicos || []).filter((t) => t !== topicoARemover) }
           : d
-      )
+      ),
     }));
+  };
+  
+  const handleExtrairEdital = async () => {
+    if (!formData.edital) return;
+    setLoadingExtracao(true);
+    setExtracaoErro(null);
+    setExtracaoSucesso(null);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      const dadosExtraidosMock = {
+        titulo: formData.titulo || "Concurso Extraído (Mock)",
+        organizadora: formData.organizadora || "Banca Extraída (Mock)",
+        dataInscricao: formData.dataInscricao || "2025-07-01",
+        dataProva: formData.dataProva || "2025-09-15",
+        conteudoProgramatico: formData.conteudoProgramatico.length > 0 ? formData.conteudoProgramatico : [
+          { disciplina: "Conhecimentos Gerais (Extraído)", topicos: ["Atualidades", "Ética"], progresso: 0 },
+          { disciplina: "Conhecimentos Específicos (Extraído)", topicos: ["Legislação X", "Técnica Y"], progresso: 0 }
+        ]
+      };
+      setFormData(prev => ({
+        ...prev,
+        ...dadosExtraidosMock,
+        edital: prev.edital || "" // Garante que edital não seja null após extração
+      }));
+      setExtracaoSucesso("Dados extraídos e preenchidos (simulação)!");
+    } catch (err) {
+      setExtracaoErro("Erro ao simular extração do edital.");
+    } finally {
+      setLoadingExtracao(false);
+    }
   };
 
   return (
@@ -103,223 +163,157 @@ export function ConcursoForm({ isOpen, onClose, concursoParaEditar }: ConcursoFo
       onClose={onClose}
       title={concursoParaEditar ? "Editar Concurso" : "Novo Concurso"}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Título
-          </label>
-          <Input
-            value={formData.titulo}
-            onChange={e => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
-            placeholder="Ex: Analista Administrativo - TRT"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Organizadora
-          </label>
-          <Input
-            value={formData.organizadora}
-            onChange={e => setFormData(prev => ({ ...prev, organizadora: e.target.value }))}
-            placeholder="Ex: CESPE"
-            required
-          />
-        </div>
-
+      <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto p-1 pr-3">
+        <Input
+          label="Título"
+          value={formData.titulo}
+          onChange={(e) => setFormData((prev) => ({ ...prev, titulo: e.target.value }))}
+          placeholder="Ex: Analista Administrativo - TRT"
+          required
+          disabled={loading}
+        />
+        <Input
+          label="Organizadora"
+          value={formData.organizadora}
+          onChange={(e) => setFormData((prev) => ({ ...prev, organizadora: e.target.value }))}
+          placeholder="Ex: CESPE, FGV"
+          required
+          disabled={loading}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Data de Inscrição
-            </label>
-            <Input
-              type="date"
-              value={formData.dataInscricao}
-              onChange={e => setFormData(prev => ({ ...prev, dataInscricao: e.target.value }))}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Data da Prova
-            </label>
-            <Input
-              type="date"
-              value={formData.dataProva}
-              onChange={e => setFormData(prev => ({ ...prev, dataProva: e.target.value }))}
-              required
-            />
-          </div>
+          <Input
+            label="Data de Inscrição"
+            type="date"
+            value={formData.dataInscricao}
+            onChange={(e) => setFormData((prev) => ({ ...prev, dataInscricao: e.target.value }))}
+            required
+            disabled={loading}
+          />
+          <Input
+            label="Data da Prova"
+            type="date"
+            value={formData.dataProva}
+            onChange={(e) => setFormData((prev) => ({ ...prev, dataProva: e.target.value }))}
+            required
+            disabled={loading}
+          />
         </div>
-
         <div>
-          <label className="block text-sm font-medium mb-1">
-            Link do Edital (opcional)
-          </label>
+          <label className="block text-sm font-medium mb-1">Link do Edital (opcional)</label>
           <div className="flex gap-2 items-start">
             <Input
               type="url"
-              value={formData.edital}
-              onChange={e => setFormData(prev => ({ ...prev, edital: e.target.value }))}
+              value={formData.edital || ""} // Garante que o valor nunca seja null
+              onChange={(e) => setFormData((prev) => ({ ...prev, edital: e.target.value }))}
               placeholder="https://..."
               className="flex-grow"
+              disabled={loading || loadingExtracao}
             />
             <Button
               type="button"
               variant="outline"
-              disabled={!formData.edital || loadingExtracao}
-              onClick={async () => {
-                if (!formData.edital) return;
-                setLoadingExtracao(true);
-                setExtracaoErro(null);
-                setExtracaoSucesso(null);
-                try {
-                  // Chamada à API de extração (simulada)
-                  // const response = await fetch('/api/extrair-edital', {
-                  //   method: 'POST',
-                  //   headers: { 'Content-Type': 'application/json' },
-                  //   body: JSON.stringify({ url: formData.edital })
-                  // });
-                  // if (!response.ok) {
-                  //   throw new Error('Erro ao extrair dados do edital.');
-                  // }
-                  // const data = await response.json();
-
-                  // Simulação de resposta da API
-                  await new Promise(resolve => setTimeout(resolve, 1500)); // Simula delay
-                  const data = {
-                    titulo: "Concurso Extraído (Mock)",
-                    organizadora: "Banca Extraída (Mock)",
-                    dataInscricao: "2025-07-01",
-                    dataProva: "2025-09-15",
-                    // Adicionar preço, etapas, cronograma se a API retornar
-                    conteudoProgramatico: [
-                      { disciplina: "Conhecimentos Gerais (Extraído)", topicos: ["Atualidades", "Ética"], progresso: 0 },
-                      { disciplina: "Conhecimentos Específicos (Extraído)", topicos: ["Legislação X", "Técnica Y"], progresso: 0 }
-                    ]
-                  };
-
-                  // Preencher campos do formulário com os dados extraídos
-                  setFormData(prev => ({
-                    ...prev,
-                    ...data
-                  }));
-                  setExtracaoSucesso('Dados extraídos com sucesso!');
-                } catch (err) {
-                  setExtracaoErro('Erro ao extrair dados do edital.');
-                } finally {
-                  setLoadingExtracao(false);
-                }
-              }}
-              className="whitespace-nowrap"
+              onClick={handleExtrairEdital}
+              disabled={!formData.edital || loadingExtracao || loading}
+              className="whitespace-nowrap h-10 mt-0"
             >
-              {loadingExtracao ? 'Extraindo...' : 'Extrair dados'}
+              {loadingExtracao ? <Loader2 className="animate-spin mr-2"/> : null}
+              {loadingExtracao ? "Extraindo..." : "Extrair Dados (Simulado)"}
             </Button>
           </div>
-          {extracaoErro && <div className="text-xs text-red-600 mt-1">{extracaoErro}</div>}
-          {extracaoSucesso && <div className="text-xs text-green-600 mt-1">{extracaoSucesso}</div>}
+          {extracaoErro && <p className="text-xs text-red-600 mt-1">{extracaoErro}</p>}
+          {extracaoSucesso && <p className="text-xs text-green-600 mt-1">{extracaoSucesso}</p>}
         </div>
-
         <div>
-          <label className="block text-sm font-medium mb-1">
-            Status
-          </label>
+          <label className="block text-sm font-medium mb-1">Status</label>
           <select
             value={formData.status}
-            onChange={e => setFormData(prev => ({ ...prev, status: e.target.value as Concurso['status'] }))}
-            className="w-full border rounded-md p-2"
+            onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value as Concurso["status"] }))}
+            className="w-full border border-border rounded-md p-2 bg-background text-foreground focus:ring-primary focus:border-primary"
+            disabled={loading}
           >
             <option value="planejado">Planejado</option>
             <option value="inscrito">Inscrito</option>
             <option value="estudando">Estudando</option>
             <option value="realizado">Realizado</option>
             <option value="aguardando_resultado">Aguardando Resultado</option>
+            <option value="aprovado">Aprovado</option>
+            <option value="reprovado">Reprovado</option>
           </select>
         </div>
 
         <div className="border-t pt-4 mt-4">
-          <h3 className="font-medium mb-2">Conteúdo Programático</h3>
-          
-          <div className="space-y-4">
-            {/* Adicionar Nova Disciplina */}
+          <h3 className="font-medium mb-2 text-foreground">Conteúdo Programático</h3>
+          <div className="space-y-3">
             <div className="flex gap-2">
               <Input
                 value={novaDisciplina}
-                onChange={e => setNovaDisciplina(e.target.value)}
+                onChange={(e) => setNovaDisciplina(e.target.value)}
                 placeholder="Nova disciplina..."
+                className="flex-grow"
+                disabled={loading}
               />
-              <Button type="button" onClick={adicionarDisciplina}>
-                <Plus size={16} />
+              <Button type="button" onClick={adicionarDisciplinaLocal} disabled={loading || !novaDisciplina.trim()} size="icon" className="flex-shrink-0">
+                <Plus size={18} />
               </Button>
             </div>
-
-            {/* Lista de Disciplinas */}
-            {formData.conteudoProgramatico.map((d, i) => (
-              <div key={i} className="border rounded-lg p-3">
+            {(formData.conteudoProgramatico || []).map((d, i) => (
+              <div key={i} className="border border-border rounded-lg p-3 bg-muted/50">
                 <div className="flex justify-between items-center mb-2">
-                  <h4 className="font-medium">{d.disciplina}</h4>
-                  <button
-                    type="button"
-                    onClick={() => removerDisciplina(d.disciplina)}
-                    className="text-red-500 hover:text-red-700"
-                  >
+                  <h4 className="font-medium text-foreground">{d.disciplina}</h4>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removerDisciplinaLocal(d.disciplina)} disabled={loading} className="text-destructive hover:text-destructive/80 h-7 w-7">
                     <X size={16} />
-                  </button>
+                  </Button>
                 </div>
-
-                {/* Adicionar Novo Tópico */}
                 <div className="flex gap-2 mb-2">
                   <Input
-                    value={disciplinaSelecionada === d.disciplina ? novoTopico : ''}
-                    onChange={e => {
-                      setDisciplinaSelecionada(d.disciplina);
+                    value={disciplinaSelecionadaParaTopico === d.disciplina ? novoTopico : ""}
+                    onChange={(e) => {
+                      setDisciplinaSelecionadaParaTopico(d.disciplina);
                       setNovoTopico(e.target.value);
                     }}
-                    placeholder="Novo tópico..."
-                    className="text-sm"
+                    placeholder="Novo tópico para esta disciplina..."
+                    className="text-sm flex-grow"
+                    disabled={loading}
                   />
                   <Button
                     type="button"
-                    onClick={adicionarTopico}
+                    onClick={adicionarTopicoLocal}
                     variant="outline"
-                    className="p-2"
-                    disabled={disciplinaSelecionada !== d.disciplina}
+                    size="icon"
+                    className="flex-shrink-0 h-9 w-9 mt-0"
+                    disabled={loading || disciplinaSelecionadaParaTopico !== d.disciplina || !novoTopico.trim()}
                   >
-                    <Plus size={14} />
+                    <Plus size={16} />
                   </Button>
                 </div>
-
-                {/* Lista de Tópicos */}
-                <ul className="space-y-1">
-                  {d.topicos.map((topico, j) => (
-                    <li key={j} className="flex justify-between items-center text-sm">
-                      <span>{topico}</span>
-                      <button
-                        type="button"
-                        onClick={() => removerTopico(d.disciplina, topico)}
-                        className="text-red-500 hover:text-red-700"
-                      >
+                <ul className="space-y-1 pl-2">
+                  {(d.topicos || []).map((topico, j) => (
+                    <li key={j} className="flex justify-between items-center text-sm text-muted-foreground">
+                      <span>- {topico}</span>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removerTopicoLocal(d.disciplina, topico)} disabled={loading} className="text-destructive hover:text-destructive/80 h-6 w-6">
                         <X size={14} />
-                      </button>
+                      </Button>
                     </li>
                   ))}
+                  {(d.topicos || []).length === 0 && <p className="text-xs text-muted-foreground italic">Nenhum tópico adicionado.</p>}
                 </ul>
               </div>
             ))}
+            {(formData.conteudoProgramatico || []).length === 0 && <p className="text-sm text-muted-foreground italic">Nenhuma disciplina adicionada.</p>}
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
+        <div className="flex justify-end gap-2 pt-6 border-t">
+          <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
-          <Button type="submit">
-            {concursoParaEditar ? 'Salvar Alterações' : 'Adicionar Concurso'}
+          <Button type="submit" disabled={loading || !formData.titulo || !formData.organizadora || !formData.dataInscricao || !formData.dataProva}>
+            {loading ? <Loader2 className="animate-spin mr-2"/> : null}
+            {concursoParaEditar ? "Salvar Alterações" : "Adicionar Concurso"}
           </Button>
         </div>
       </form>
     </Modal>
   );
 }
+

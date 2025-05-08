@@ -15,7 +15,7 @@ export function TemporizadorPomodoro({ tipo = 'geral', titulo }: TemporizadorPom
 
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(true)
-  const [time, setTime] = useState(configuracao.tempoFoco * 60) // tempo em segundos
+  const [time, setTime] = useState((configuracao?.tempoFoco ?? 25) * 60) // tempo em segundos
   const [ciclo, setCiclo] = useState<'foco' | 'pausa' | 'longapausa'>('foco')
   const [showSettings, setShowSettings] = useState(false)
   const [configTemp, setConfigTemp] = useState(configuracao)
@@ -24,11 +24,11 @@ export function TemporizadorPomodoro({ tipo = 'geral', titulo }: TemporizadorPom
     // Reset timer quando a configuração mudar e o timer estiver parado
     if (!isActive || isPaused) {
       if (ciclo === 'foco') {
-        setTime(configuracao.tempoFoco * 60);
+        setTime((configuracao?.tempoFoco ?? 25) * 60);
       } else if (ciclo === 'pausa') {
-        setTime(configuracao.tempoPausa * 60);
+        setTime((configuracao?.tempoPausa ?? 5) * 60);
       } else {
-        setTime(configuracao.tempoLongapausa * 60);
+        setTime((configuracao?.tempoLongapausa ?? 15) * 60);
       }
     }
   }, [configuracao, isActive, isPaused, ciclo]);
@@ -54,16 +54,16 @@ export function TemporizadorPomodoro({ tipo = 'geral', titulo }: TemporizadorPom
               incrementarCiclosCompletos()
               
               // Verificar se deve ser uma pausa longa
-              if ((ciclosCompletos + 1) % configuracao.ciclosAntesLongapausa === 0) {
+              if ((ciclosCompletos + 1) % (configuracao?.ciclosAntesLongapausa ?? 4) === 0) {
                 setCiclo('longapausa')
-                return configuracao.tempoLongapausa * 60
+                return (configuracao?.tempoLongapausa ?? 15) * 60
               } else {
                 setCiclo('pausa')
-                return configuracao.tempoPausa * 60
+                return (configuracao?.tempoPausa ?? 5) * 60
               }
             } else {
               setCiclo('foco')
-              return configuracao.tempoFoco * 60
+              return (configuracao?.tempoFoco ?? 25) * 60
             }
           }
           return time - 1
@@ -97,20 +97,22 @@ export function TemporizadorPomodoro({ tipo = 'geral', titulo }: TemporizadorPom
     setIsActive(false)
     setIsPaused(true)
     setCiclo('foco')
-    setTime(configuracao.tempoFoco * 60)
+    setTime((configuracao?.tempoFoco ?? 25) * 60)
     resetarCiclosCompletos()
   }
 
   const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setConfigTemp({
-      ...configTemp,
+      ...configTemp!,
       [name]: parseInt(value),
     })
   }
 
   const saveSettings = () => {
-    atualizarConfiguracao(configTemp)
+    if (configTemp) {
+      atualizarConfiguracao(configTemp);
+    }
     setShowSettings(false)
   }
 
@@ -240,7 +242,7 @@ export function TemporizadorPomodoro({ tipo = 'geral', titulo }: TemporizadorPom
                   name="tempoFoco"
                   min="1"
                   max="60"
-                  value={configTemp.tempoFoco}
+                  value={configTemp?.tempoFoco ?? 25}
                   onChange={handleSettingsChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
                 />
@@ -259,7 +261,7 @@ export function TemporizadorPomodoro({ tipo = 'geral', titulo }: TemporizadorPom
                   name="tempoPausa"
                   min="1"
                   max="30"
-                  value={configTemp.tempoPausa}
+                  value={configTemp?.tempoPausa ?? 5}
                   onChange={handleSettingsChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
                 />
@@ -278,7 +280,7 @@ export function TemporizadorPomodoro({ tipo = 'geral', titulo }: TemporizadorPom
                   name="tempoLongapausa"
                   min="5"
                   max="60"
-                  value={configTemp.tempoLongapausa}
+                  value={configTemp?.tempoLongapausa ?? 15}
                   onChange={handleSettingsChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
                 />
@@ -297,7 +299,7 @@ export function TemporizadorPomodoro({ tipo = 'geral', titulo }: TemporizadorPom
                   name="ciclosAntesLongapausa"
                   min="1"
                   max="10"
-                  value={configTemp.ciclosAntesLongapausa}
+                  value={configTemp?.ciclosAntesLongapausa ?? 4}
                   onChange={handleSettingsChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
                 />

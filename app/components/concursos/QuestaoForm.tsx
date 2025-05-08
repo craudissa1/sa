@@ -1,68 +1,83 @@
-'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useQuestoesStore, Questao, Alternativa } from '@/app/stores/questoesStore';
-import { Modal } from '@/app/components/ui/Modal';
-import { Button } from '@/app/components/ui/Button';
-import { Input } from '@/app/components/ui/Input';
-import { Textarea } from '@/app/components/ui/Textarea';
-import { Select } from '@/app/components/ui/Select';
-import { Checkbox } from '@/app/components/ui/Checkbox';
-import { PlusCircle, Trash2 } from 'lucide-react';
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useQuestoesStore, Questao, AlternativaQuestao as Alternativa } from "@/app/stores/questoesStore";
+import { Modal } from "@/app/components/ui/Modal";
+import { Button } from "@/app/components/ui/Button";
+import { Input } from "@/app/components/ui/Input";
+import { Textarea } from "@/app/components/ui/Textarea";
+import { Select } from "@/app/components/ui/Select";
+import { Checkbox } from "@/app/components/ui/Checkbox";
+import { PlusCircle, Trash2 } from "lucide-react";
 
 interface QuestaoFormProps {
   isOpen: boolean;
   onClose: () => void;
-  concursoId: string; // Para associar a questão ao concurso correto
+  concursoId: string;
   questaoParaEditar?: Questao | null;
 }
 
 const niveisDificuldade = [
-  { value: 'facil', label: 'Fácil' },
-  { value: 'medio', label: 'Médio' },
-  { value: 'dificil', label: 'Difícil' },
+  { value: "facil", label: "Fácil" },
+  { value: "medio", label: "Médio" },
+  { value: "dificil", label: "Difícil" },
 ];
 
+// Tipo para o estado interno do formulário
+interface QuestaoFormData {
+  disciplina: string;
+  topico: string;
+  enunciado: string;
+  alternativas: Alternativa[];
+  justificativa: string;
+  nivel_dificuldade: "facil" | "medio" | "dificil";
+  ano: string; // Mantido como string para o input, convertido no submit
+  banca: string;
+  tags: string; // Mantido como string para o input, convertido no submit
+  resposta_correta_id: string;
+}
+
 export function QuestaoForm({ isOpen, onClose, concursoId, questaoParaEditar }: QuestaoFormProps) {
-  const { adicionarQuestao, atualizarQuestao } = useQuestoesStore();
+  const { adicionarQuestao, atualizarQuestao, fetchQuestoes } = useQuestoesStore();
+  const currentUser = useQuestoesStore((state) => state.currentUser);
 
-  // Estado inicial do formulário
-  const initialState = {
-    disciplina: '',
-    topico: '',
-    enunciado: '',
-    alternativas: [{ id: crypto.randomUUID(), texto: '', correta: false }],
-    justificativa: '',
-    nivelDificuldade: 'medio',
-    ano: new Date().getFullYear(),
-    banca: '',
-    tags: '', // Usar string separada por vírgula para simplicidade no input
-  };
+  const getInitialState = (): QuestaoFormData => ({
+    disciplina: "",
+    topico: "",
+    enunciado: "",
+    alternativas: [{ id: crypto.randomUUID(), texto: "", correta: false } as Alternativa],
+    justificativa: "",
+    nivel_dificuldade: "medio",
+    ano: new Date().getFullYear().toString(),
+    banca: "",
+    tags: "",
+    resposta_correta_id: "",
+  });
 
-  const [formData, setFormData] = useState(initialState);
-  const [respostaCorretaId, setRespostaCorretaId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<QuestaoFormData>(getInitialState());
 
   useEffect(() => {
-    if (questaoParaEditar) {
-      // Preenche o formulário com dados da questão para edição
-      setFormData({
-        disciplina: questaoParaEditar.disciplina,
-        topico: questaoParaEditar.topico,
-        enunciado: questaoParaEditar.enunciado,
-        alternativas: questaoParaEditar.alternativas.map(a => ({ ...a })), // Cria cópias
-        justificativa: questaoParaEditar.justificativa || '',
-        nivelDificuldade: questaoParaEditar.nivelDificuldade || 'medio',
-        ano: questaoParaEditar.ano || new Date().getFullYear(),
-        banca: questaoParaEditar.banca || '',
-        tags: questaoParaEditar.tags?.join(', ') || '',
-      });
-      setRespostaCorretaId(questaoParaEditar.respostaCorreta);
-    } else {
-      // Reseta para o estado inicial ao abrir para adicionar nova questão
-      setFormData(initialState);
-      setRespostaCorretaId(null);
+    if (isOpen) {
+      if (questaoParaEditar && questaoParaEditar.id) {
+        const alternativasEdit = questaoParaEditar.alternativas.map(a => ({ ...a }));
+        setFormData({
+          disciplina: questaoParaEditar.disciplina,
+          topico: questaoParaEditar.topico,
+          enunciado: questaoParaEditar.enunciado,
+          alternativas: alternativasEdit,
+          justificativa: questaoParaEditar.justificativa || "",
+          nivel_dificuldade: questaoParaEditar.nivel_dificuldade || "medio",
+          ano: questaoParaEditar.ano?.toString() || new Date().getFullYear().toString(),
+          banca: questaoParaEditar.banca || "",
+          tags: questaoParaEditar.tags?.join(", ") || "",
+          resposta_correta_id: questaoParaEditar.resposta_correta_id,
+        });
+      } else {
+        setFormData(getInitialState());
+      }
     }
-  }, [questaoParaEditar, isOpen]); // Depende de isOpen para resetar ao reabrir
+  }, [questaoParaEditar, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -79,70 +94,71 @@ export function QuestaoForm({ isOpen, onClose, concursoId, questaoParaEditar }: 
   };
 
   const handleRespostaCorretaChange = (id: string) => {
-    setRespostaCorretaId(id);
     setFormData(prev => ({
       ...prev,
-      alternativas: prev.alternativas.map(alt => ({
-        ...alt,
-        correta: alt.id === id,
-      })),
+      alternativas: prev.alternativas.map(alt => ({ ...alt, correta: alt.id === id })),
+      resposta_correta_id: id,
     }));
   };
 
   const adicionarAlternativa = () => {
     setFormData(prev => ({
       ...prev,
-      alternativas: [...prev.alternativas, { id: crypto.randomUUID(), texto: '', correta: false }],
+      alternativas: [...prev.alternativas, { id: crypto.randomUUID(), texto: "", correta: false } as Alternativa],
     }));
   };
 
   const removerAlternativa = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      alternativas: prev.alternativas.filter(alt => alt.id !== id),
-    }));
-    // Se remover a correta, desmarca
-    if (respostaCorretaId === id) {
-      setRespostaCorretaId(null);
-    }
+    setFormData(prev => {
+      const novasAlternativas = prev.alternativas.filter(alt => alt.id !== id);
+      let novaRespostaCorretaId = prev.resposta_correta_id;
+      if (prev.resposta_correta_id === id) {
+        novaRespostaCorretaId = novasAlternativas.length > 0 && novasAlternativas.find(na => na.correta) ? novasAlternativas.find(na => na.correta)!.id : "";
+      }
+      return {
+        ...prev,
+        alternativas: novasAlternativas,
+        resposta_correta_id: novaRespostaCorretaId,
+      };
+    });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!respostaCorretaId) {
-      alert('Por favor, marque uma alternativa como correta.');
+    if (!formData.resposta_correta_id || !formData.alternativas.find(alt => alt.id === formData.resposta_correta_id)?.correta) {
+      alert("Por favor, marque uma alternativa como correta.");
       return;
     }
+    if (!currentUser) {
+        alert("Usuário não autenticado. Faça login para continuar.");
+        return;
+    }
 
-    // Garante que nivelDificuldade tenha o tipo correto
-    const nivelDificuldadeTyped = formData.nivelDificuldade as 'facil' | 'medio' | 'dificil' | undefined;
-
-    const questaoData = {
-      ...formData,
-      concursoId: concursoId,
-      ano: Number(formData.ano) || undefined,
-      tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag), // Converte string para array
-      respostaCorreta: respostaCorretaId,
-      alternativas: formData.alternativas, // Já está no formato correto
-      nivelDificuldade: nivelDificuldadeTyped, // Usa o valor com tipo corrigido
+    const questaoPayload: Omit<Questao, "id" | "user_id" | "created_at" | "updated_at"> = {
+      disciplina: formData.disciplina,
+      topico: formData.topico,
+      enunciado: formData.enunciado,
+      alternativas: formData.alternativas.map(alt => ({id: alt.id, texto: alt.texto, correta: alt.id === formData.resposta_correta_id})),
+      justificativa: formData.justificativa,
+      nivel_dificuldade: formData.nivel_dificuldade,
+      ano: formData.ano ? Number(formData.ano) : null,
+      banca: formData.banca,
+      tags: formData.tags.split(",").map(tag => tag.trim()).filter(tag => tag.length > 0),
+      resposta_correta_id: formData.resposta_correta_id,
+      concurso_id: concursoId,
     };
 
-    // Remove o ID ao adicionar uma nova questão, pois ele é gerado pelo store
-    const questaoParaAdicionar = { ...questaoData };
-    // delete questaoParaAdicionar.id; // O tipo Omit já faz isso implicitamente
-
     try {
-      if (questaoParaEditar) {
-        // Passa o ID da questão a ser editada e os dados atualizados
-        // questaoData já contém os dados formatados corretamente (sem ID no objeto principal)
-        atualizarQuestao(questaoParaEditar.id, questaoData);
+      if (questaoParaEditar && questaoParaEditar.id) {
+        await atualizarQuestao(questaoParaEditar.id, questaoPayload);
       } else {
-        // Passa os dados sem o ID para adicionar
-        // questaoParaAdicionar já está formatado corretamente
-        adicionarQuestao(questaoParaAdicionar);
+        await adicionarQuestao(questaoPayload);
       }
-      onClose(); // Fecha o modal após sucesso
+      if (currentUser?.id) {
+        await fetchQuestoes(currentUser.id, concursoId);
+      }
+      onClose();
     } catch (error) {
       console.error("Erro ao salvar questão:", error);
       alert(`Erro ao salvar questão: ${error instanceof Error ? error.message : String(error)}`);
@@ -150,8 +166,8 @@ export function QuestaoForm({ isOpen, onClose, concursoId, questaoParaEditar }: 
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={questaoParaEditar ? 'Editar Questão' : 'Adicionar Nova Questão'}>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <Modal isOpen={isOpen} onClose={onClose} title={questaoParaEditar ? "Editar Questão" : "Adicionar Nova Questão"}>
+      <form onSubmit={handleSubmit} className="space-y-4 max-h-[80vh] overflow-y-auto p-1">
         <Input
           label="Disciplina"
           name="disciplina"
@@ -171,20 +187,17 @@ export function QuestaoForm({ isOpen, onClose, concursoId, questaoParaEditar }: 
           value={formData.enunciado}
           onChange={handleChange}
           required
-          rows={4}
+          rows={3}
         />
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Alternativas</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alternativas</label>
           <div className="space-y-2">
             {formData.alternativas.map((alt, index) => (
               <div key={alt.id} className="flex items-center gap-2">
-                {/* Assume que a prop de mudança é 'onChange' ou similar, não 'onCheckedChange' */}
-                {/* O componente Checkbox provavelmente passa o novo estado (boolean) ou um evento */}
                 <Checkbox
                   id={`correta-${alt.id}`}
-                  checked={respostaCorretaId === alt.id}
-                  // Tentativa com onChange. Se falhar, verificar ui/Checkbox.tsx
+                  checked={formData.resposta_correta_id === alt.id}
                   onChange={() => handleRespostaCorretaChange(alt.id)}
                 />
                 <Input
@@ -200,7 +213,7 @@ export function QuestaoForm({ isOpen, onClose, concursoId, questaoParaEditar }: 
                     variant="ghost"
                     size="icon"
                     onClick={() => removerAlternativa(alt.id)}
-                    className="text-red-500 hover:text-red-700"
+                    className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-600 p-1"
                   >
                     <Trash2 size={16} />
                   </Button>
@@ -223,16 +236,16 @@ export function QuestaoForm({ isOpen, onClose, concursoId, questaoParaEditar }: 
         <Textarea
           label="Justificativa (Opcional)"
           name="justificativa"
-          value={formData.justificativa}
+          value={formData.justificativa || ""}
           onChange={handleChange}
-          rows={3}
+          rows={2}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Select
             label="Nível de Dificuldade"
-            name="nivelDificuldade"
-            value={formData.nivelDificuldade}
+            name="nivel_dificuldade"
+            value={formData.nivel_dificuldade || "medio"}
             onChange={handleChange}
             options={niveisDificuldade}
           />
@@ -240,14 +253,14 @@ export function QuestaoForm({ isOpen, onClose, concursoId, questaoParaEditar }: 
             label="Ano (Opcional)"
             name="ano"
             type="number"
-            value={formData.ano}
+            value={formData.ano || ""}
             onChange={handleChange}
             placeholder="Ex: 2023"
           />
           <Input
             label="Banca (Opcional)"
             name="banca"
-            value={formData.banca}
+            value={formData.banca || ""}
             onChange={handleChange}
           />
         </div>
@@ -257,18 +270,19 @@ export function QuestaoForm({ isOpen, onClose, concursoId, questaoParaEditar }: 
           name="tags"
           value={formData.tags}
           onChange={handleChange}
-          placeholder="Ex: Direito Administrativo, Licitações, Lei 8666"
+          placeholder="Ex: Direito Administrativo, Licitações"
         />
 
-        <div className="flex justify-end gap-2 pt-4">
+        <div className="flex justify-end gap-2 pt-4 sticky bottom-0 bg-background dark:bg-background py-3 border-t border-border">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>
           <Button type="submit">
-            {questaoParaEditar ? 'Salvar Alterações' : 'Adicionar Questão'}
+            {questaoParaEditar ? "Salvar Alterações" : "Adicionar Questão"}
           </Button>
         </div>
       </form>
     </Modal>
   );
 }
+

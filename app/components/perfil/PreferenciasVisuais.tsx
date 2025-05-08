@@ -4,20 +4,27 @@ import { usePerfilStore } from '../../stores/perfilStore'
 import { Eye, BarChart2, Type, Bell, Coffee, Moon } from 'lucide-react'
 
 export function PreferenciasVisuais() {
-  const { 
-    preferenciasVisuais, 
-    atualizarPreferenciasVisuais, 
-    notificacoesAtivas, 
-    pausasAtivas,
-    alternarNotificacoes,
-    alternarPausas
-  } = usePerfilStore()
+  const perfilStore = usePerfilStore()
+  const perfil = perfilStore.perfil || {
+    preferenciasVisuais: {
+      altoContraste: false,
+      reducaoEstimulos: false,
+      textoGrande: false
+    },
+    notificacoesAtivas: true,
+    pausasAtivas: true
+  }
   
   const toggleAltoContraste = () => {
-    atualizarPreferenciasVisuais({ altoContraste: !preferenciasVisuais.altoContraste })
+    perfilStore.updatePerfil({ 
+      preferenciasVisuais: {
+        ...perfil.preferenciasVisuais,
+        altoContraste: !perfil.preferenciasVisuais.altoContraste 
+      }
+    })
     
     // Aplicar classes ao documento para alto contraste
-    if (!preferenciasVisuais.altoContraste) {
+    if (!perfil.preferenciasVisuais.altoContraste) {
       document.documentElement.classList.add('alto-contraste')
     } else {
       document.documentElement.classList.remove('alto-contraste')
@@ -25,10 +32,15 @@ export function PreferenciasVisuais() {
   }
   
   const toggleReducaoEstimulos = () => {
-    atualizarPreferenciasVisuais({ reducaoEstimulos: !preferenciasVisuais.reducaoEstimulos })
+    perfilStore.updatePerfil({ 
+      preferenciasVisuais: {
+        ...perfil.preferenciasVisuais,
+        reducaoEstimulos: !perfil.preferenciasVisuais.reducaoEstimulos
+      }
+    })
     
     // Aplicar classes ao documento para redução de estímulos
-    if (!preferenciasVisuais.reducaoEstimulos) {
+    if (!perfil.preferenciasVisuais.reducaoEstimulos) {
       document.documentElement.classList.add('reducao-estimulos')
     } else {
       document.documentElement.classList.remove('reducao-estimulos')
@@ -36,14 +48,27 @@ export function PreferenciasVisuais() {
   }
   
   const toggleTextoGrande = () => {
-    atualizarPreferenciasVisuais({ textoGrande: !preferenciasVisuais.textoGrande })
+    perfilStore.updatePerfil({ 
+      preferenciasVisuais: {
+        ...perfil.preferenciasVisuais,
+        textoGrande: !perfil.preferenciasVisuais.textoGrande
+      }
+    })
     
     // Aplicar classes ao documento para texto grande
-    if (!preferenciasVisuais.textoGrande) {
+    if (!perfil.preferenciasVisuais.textoGrande) {
       document.documentElement.classList.add('texto-grande')
     } else {
       document.documentElement.classList.remove('texto-grande')
     }
+  }
+  
+  const alternarNotificacoes = () => {
+    perfilStore.updatePerfil({ notificacoesAtivas: !perfil.notificacoesAtivas })
+  }
+  
+  const alternarPausas = () => {
+    perfilStore.updatePerfil({ pausasAtivas: !perfil.pausasAtivas })
   }
   
   return (
@@ -79,16 +104,16 @@ export function PreferenciasVisuais() {
               
               <button
                 role="switch"
-                aria-checked={preferenciasVisuais.altoContraste}
+                aria-checked={perfil.preferenciasVisuais.altoContraste}
                 onClick={toggleAltoContraste}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-perfil-primary ${
-                  preferenciasVisuais.altoContraste ? 'bg-perfil-primary' : 'bg-gray-200 dark:bg-gray-700'
+                  perfil.preferenciasVisuais.altoContraste ? 'bg-perfil-primary' : 'bg-gray-200 dark:bg-gray-700'
                 }`}
               >
                 <span className="sr-only">Ativar alto contraste</span>
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    preferenciasVisuais.altoContraste ? 'translate-x-6' : 'translate-x-1'
+                    perfil.preferenciasVisuais.altoContraste ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
               </button>
@@ -112,16 +137,16 @@ export function PreferenciasVisuais() {
               
               <button
                 role="switch"
-                aria-checked={preferenciasVisuais.reducaoEstimulos}
+                aria-checked={perfil.preferenciasVisuais.reducaoEstimulos}
                 onClick={toggleReducaoEstimulos}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-perfil-primary ${
-                  preferenciasVisuais.reducaoEstimulos ? 'bg-perfil-primary' : 'bg-gray-200 dark:bg-gray-700'
+                  perfil.preferenciasVisuais.reducaoEstimulos ? 'bg-perfil-primary' : 'bg-gray-200 dark:bg-gray-700'
                 }`}
               >
                 <span className="sr-only">Ativar redução de estímulos</span>
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    preferenciasVisuais.reducaoEstimulos ? 'translate-x-6' : 'translate-x-1'
+                    perfil.preferenciasVisuais.reducaoEstimulos ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
               </button>
@@ -145,16 +170,16 @@ export function PreferenciasVisuais() {
               
               <button
                 role="switch"
-                aria-checked={preferenciasVisuais.textoGrande}
+                aria-checked={perfil.preferenciasVisuais.textoGrande}
                 onClick={toggleTextoGrande}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-perfil-primary ${
-                  preferenciasVisuais.textoGrande ? 'bg-perfil-primary' : 'bg-gray-200 dark:bg-gray-700'
+                  perfil.preferenciasVisuais.textoGrande ? 'bg-perfil-primary' : 'bg-gray-200 dark:bg-gray-700'
                 }`}
               >
                 <span className="sr-only">Ativar texto grande</span>
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    preferenciasVisuais.textoGrande ? 'translate-x-6' : 'translate-x-1'
+                    perfil.preferenciasVisuais.textoGrande ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
               </button>
@@ -187,16 +212,16 @@ export function PreferenciasVisuais() {
               
               <button
                 role="switch"
-                aria-checked={notificacoesAtivas}
+                aria-checked={perfil.notificacoesAtivas}
                 onClick={alternarNotificacoes}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-perfil-primary ${
-                  notificacoesAtivas ? 'bg-perfil-primary' : 'bg-gray-200 dark:bg-gray-700'
+                  perfil.notificacoesAtivas ? 'bg-perfil-primary' : 'bg-gray-200 dark:bg-gray-700'
                 }`}
               >
                 <span className="sr-only">Ativar notificações</span>
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    notificacoesAtivas ? 'translate-x-6' : 'translate-x-1'
+                    perfil.notificacoesAtivas ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
               </button>
@@ -220,16 +245,16 @@ export function PreferenciasVisuais() {
               
               <button
                 role="switch"
-                aria-checked={pausasAtivas}
+                aria-checked={perfil.pausasAtivas}
                 onClick={alternarPausas}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-perfil-primary ${
-                  pausasAtivas ? 'bg-perfil-primary' : 'bg-gray-200 dark:bg-gray-700'
+                  perfil.pausasAtivas ? 'bg-perfil-primary' : 'bg-gray-200 dark:bg-gray-700'
                 }`}
               >
                 <span className="sr-only">Ativar pausas programadas</span>
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    pausasAtivas ? 'translate-x-6' : 'translate-x-1'
+                    perfil.pausasAtivas ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
               </button>

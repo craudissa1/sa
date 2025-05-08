@@ -57,7 +57,7 @@ export function MonitoramentoHumor() {
   }, [adicionarRegistroHumor, novoRegistro])
 
   const iniciarEdicao = useCallback((registro: typeof registrosHumor[0]) => {
-    setEditandoId(registro.id)
+    setEditandoId(registro.id || null)
     setNovoRegistro({
       data: registro.data,
       nivel: registro.nivel,
@@ -360,7 +360,7 @@ export function MonitoramentoHumor() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => removerRegistroHumor(registro.id)}
+                        onClick={() => registro.id && removerRegistroHumor(registro.id)}
                         aria-label="Remover registro"
                       >
                         <Trash className="h-4 w-4" />

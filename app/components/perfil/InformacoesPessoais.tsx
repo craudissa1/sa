@@ -5,7 +5,8 @@ import { usePerfilStore } from '../../stores/perfilStore'
 import { Save, User, Edit } from 'lucide-react'
 
 export function InformacoesPessoais() {
-  const { nome, atualizarNome } = usePerfilStore()
+  const perfilStore = usePerfilStore()
+  const nome = perfilStore.perfil?.nome || ''
   const [novoNome, setNovoNome] = useState(nome)
   const [editando, setEditando] = useState(false)
   
@@ -16,7 +17,7 @@ export function InformacoesPessoais() {
   
   const salvarAlteracoes = () => {
     if (novoNome.trim()) {
-      atualizarNome(novoNome.trim())
+      perfilStore.updatePerfil({ nome: novoNome.trim() })
     }
     setEditando(false)
   }

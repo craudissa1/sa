@@ -8,7 +8,7 @@ import { useFinancasStore } from '../stores/financasStore';
 import { useAlimentacaoStore } from '../stores/alimentacaoStore';
 import { useAutoconhecimentoStore } from '../stores/autoconhecimentoStore';
 import { useHiperfocosStore } from '../stores/hiperfocosStore';
-import { usePainelDiaStore } from '../stores/painelDiaStore';
+// import { usePainelDiaStore } from '../stores/painelDiaStore'; // Removido - store não existe
 import { usePerfilStore } from '../stores/perfilStore';
 import { usePomodoroStore } from '../stores/pomodoroStore';
 import { usePrioridadesStore } from '../stores/prioridadesStore';
@@ -28,7 +28,7 @@ const coletarDadosParaExportar = (): object | null => {
     const alimentacao = useAlimentacaoStore.getState();
     const autoconhecimento = useAutoconhecimentoStore.getState();
     const hiperfocos = useHiperfocosStore.getState();
-    const painelDia = usePainelDiaStore.getState();
+    // const painelDia = usePainelDiaStore.getState(); // Removido - store não existe
     const perfil = usePerfilStore.getState();
     const pomodoro = usePomodoroStore.getState();
     const prioridades = usePrioridadesStore.getState();
@@ -46,7 +46,6 @@ const coletarDadosParaExportar = (): object | null => {
         alimentacao: limparFuncoesDoObjeto(alimentacao),
         autoconhecimento: limparFuncoesDoObjeto(autoconhecimento),
         hiperfocos: limparFuncoesDoObjeto(hiperfocos),
-        painelDia: limparFuncoesDoObjeto(painelDia),
         perfil: limparFuncoesDoObjeto(perfil),
         pomodoro: limparFuncoesDoObjeto(pomodoro),
         prioridades: limparFuncoesDoObjeto(prioridades),
@@ -181,7 +180,7 @@ const _applyImportedData = (dadosImportados: any) => {
   applyState(useAlimentacaoStore.setState, dadosImportados.alimentacao);
   applyState(useAutoconhecimentoStore.setState, dadosImportados.autoconhecimento);
   applyState(useHiperfocosStore.setState, dadosImportados.hiperfocos);
-  applyState(usePainelDiaStore.setState, dadosImportados.painelDia);
+  // applyState(usePainelDiaStore.setState, dadosImportados.painelDia); // Removido - store não existe
   applyState(usePerfilStore.setState, dadosImportados.perfil);
   applyState(usePomodoroStore.setState, dadosImportados.pomodoro);
   applyState(usePrioridadesStore.setState, dadosImportados.prioridades);

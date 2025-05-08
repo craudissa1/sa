@@ -15,7 +15,7 @@ interface DetalhesReceitaProps {
 export function DetalhesReceita({ id }: DetalhesReceitaProps) {
   const router = useRouter();
   const { obterReceitaPorId, removerReceita, alternarFavorito, favoritos } = useReceitasStore();
-  const { adicionarRefeicao } = useAlimentacaoStore(); // Use adicionarRefeicao from alimentacaoStore
+  const { adicionarRefeicaoPlanejada } = useAlimentacaoStore(); // Corrigido para função correta
   const [porcoes, setPorcoes] = useState(1); // Default to 1 portion for calculation
 
   const receita = obterReceitaPorId(id);
@@ -45,12 +45,11 @@ export function DetalhesReceita({ id }: DetalhesReceitaProps) {
   };
 
   const adicionarAoPlanejamento = () => {
-    // adicionarRefeicao takes only horario and descricao
-    adicionarRefeicao(
-        new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), // Example: current time
-        receita.nome // Use recipe name as description
-        // receita.id is not passed as per store signature
-    );
+    // adicionarRefeicaoPlanejada recebe um objeto com horario e descricao
+    adicionarRefeicaoPlanejada({
+      horario: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), // Example: current time
+      descricao: receita.nome // Use recipe name as description
+    });
     // Optionally, navigate to the planner or show a confirmation message
     alert(`${receita.nome} adicionada ao planejador!`);
     // router.push('/alimentacao'); // Example navigation

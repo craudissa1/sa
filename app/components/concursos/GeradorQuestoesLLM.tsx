@@ -1,200 +1,192 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Button } from '@/app/components/ui/Button';
-import { Input } from '@/app/components/ui/Input';
-import { Textarea } from '@/app/components/ui/Textarea';
-import { Alert } from '@/app/components/ui/Alert';
-import { Card } from '@/app/components/ui/Card';
-import { Loader2, Wand2, UploadCloud, Search } from 'lucide-react';
+import React, { useState } from "react";
+import { Button } from "@/app/components/ui/Button";
+import { Input } from "@/app/components/ui/Input";
+import { Textarea } from "@/app/components/ui/Textarea";
+import { Alert } from "@/app/components/ui/Alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
+import { Loader2, Wand2, UploadCloud, Search, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useQuestoesStore, type Questao, type AlternativaQuestao } from "@/app/stores/questoesStore";
+import { useAuth } from "@/app/context/AuthContext";
 
-// Estrutura da questão gerada pela LLM
 interface QuestaoLLM {
   questao: string;
   alternativas: string[];
-  correta: string; // Letra: "A", "B", "C", "D"
+  correta: string;
   disciplina: string;
   topico: string;
 }
-
-import { useQuestoesStore } from '@/app/stores/questoesStore';
 
 interface GeradorQuestoesLLMProps {
   concursoId: string;
 }
 
 export function GeradorQuestoesLLM({ concursoId }: GeradorQuestoesLLMProps) {
-  const [disciplina, setDisciplina] = useState('');
-  const [topico, setTopico] = useState('');
+  const { user } = useAuth();
+  const { importarQuestoes: importarQuestoesStore, fetchQuestoes } = useQuestoesStore();
+
+  const [disciplina, setDisciplina] = useState("");
+  const [topico, setTopico] = useState("");
   const [quantidade, setQuantidade] = useState(3);
-  const [resumo, setResumo] = useState('');
-  const [questoes, setQuestoes] = useState<QuestaoLLM[]>([]);
+  const [resumo, setResumo] = useState("");
+  const [questoesGeradasLLM, setQuestoesGeradasLLM] = useState<QuestaoLLM[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [llmPerformance, setLlmPerformance] = useState<{ duration: number, prompt: string, rawResponse: any } | null>(null);
-  const [dificuldade, setDificuldade] = useState<'facil' | 'medio' | 'dificil'>('facil');
+  const [llmPerformance, setLlmPerformance] = useState<{ duration: number; prompt: string; rawResponse: any } | null>(null);
+  const [dificuldade, setDificuldade] = useState<"facil" | "medio" | "dificil">("facil");
 
-  const { adicionarQuestoes } = useQuestoesStore();
-
-  // Busca resumo via Perplexity MCP (simulado)
   const buscarResumo = async () => {
     setError(null);
     setSuccessMessage(null);
     setIsLoading(true);
     try {
-      // Aqui seria feita a chamada real ao MCP
-      // Exemplo:
-      // const response = await use_mcp_tool('perplexity-search', 'search', {
-      //   query: `Resumo dos principais tópicos de ${disciplina} sobre ${topico} para concursos públicos`
-      // });
-      // setResumo(response.data[0]?.snippet || '');
-
-      // Simulação:
       await new Promise(resolve => setTimeout(resolve, 1200));
       setResumo(`Resumo simulado para ${disciplina} - ${topico}: principais conceitos, legislação e interpretação de textos.`);
-      setSuccessMessage('Resumo obtido via MCP (simulado).');
+      setSuccessMessage("Resumo obtido via MCP (simulado).");
     } catch (err) {
-      setError('Erro ao buscar resumo via MCP.');
+      setError("Erro ao buscar resumo via MCP.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Gera questões via API
   const gerarQuestoes = async () => {
     setError(null);
     setSuccessMessage(null);
     setIsLoading(true);
-    setQuestoes([]);
+    setQuestoesGeradasLLM([]);
     setLlmPerformance(null);
     const start = performance.now();
-    let prompt = '';
+    let prompt = "";
     let rawResponse = null;
+
     try {
-      // Limites de tokens por dificuldade
-      const tokensPorDificuldade = {
-        facil: 2000,
-        medio: 5000,
-        dificil: 8000,
-      };
-      // Instrução extra para a LLM conforme dificuldade
-      let instrucaoDificuldade = '';
-      if (dificuldade === 'facil') {
-        instrucaoDificuldade = 'As questões devem ser diretas, sem exigir raciocínio complexo. Use até 2000 tokens.';
-      } else if (dificuldade === 'medio') {
-        instrucaoDificuldade = 'As questões devem exigir reflexão moderada, com enunciados mais elaborados. Use até 5000 tokens e invista mais recursos computacionais para garantir qualidade e profundidade.';
-      } else if (dificuldade === 'dificil') {
-        instrucaoDificuldade = 'As questões devem ser desafiadoras, exigindo análise crítica e interpretação profunda. Use até 8000 tokens e utilize o máximo de recursos computacionais para garantir questões complexas e bem fundamentadas.';
-      }
-      // Monta prompt para log
-      prompt = `
-Gere ${quantidade} questões objetivas de múltipla escolha, cada uma com 4 alternativas e apenas uma correta, no formato JSON abaixo. Use apenas o contexto fornecido.
-Nível de dificuldade: ${dificuldade.toUpperCase()}. ${instrucaoDificuldade}
+      const tokensPorDificuldade = { facil: 2000, medio: 5000, dificil: 8000 };
+      let instrucaoDificuldade = "";
+      if (dificuldade === "facil") instrucaoDificuldade = "As questões devem ser diretas, sem exigir raciocínio complexo. Use até 2000 tokens.";
+      else if (dificuldade === "medio") instrucaoDificuldade = "As questões devem exigir reflexão moderada, com enunciados mais elaborados. Use até 5000 tokens e invista mais recursos computacionais para garantir qualidade e profundidade.";
+      else instrucaoDificuldade = "As questões devem ser desafiadoras, exigindo análise crítica e interpretação profunda. Use até 8000 tokens e utilize o máximo de recursos computacionais para garantir questões complexas e bem fundamentadas.";
+      
+      prompt = `Gere ${quantidade} questões objetivas de múltipla escolha, cada uma com 4 alternativas e apenas uma correta, no formato JSON abaixo. Use apenas o contexto fornecido. Nível de dificuldade: ${dificuldade.toUpperCase()}. ${instrucaoDificuldade}\n\n{\n  "questao": "Enunciado da questão",\n  "alternativas": ["Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D"],\n  "correta": "Letra da alternativa correta (A, B, C ou D)",\n  "disciplina": "${disciplina}",\n  "topico": "${topico || ""}"\n}\n\nContexto:\n${resumo}`.trim();
 
-{
-  "questao": "Enunciado da questão",
-  "alternativas": [
-    "Alternativa A",
-    "Alternativa B",
-    "Alternativa C",
-    "Alternativa D"
-  ],
-  "correta": "Letra da alternativa correta (A, B, C ou D)",
-  "disciplina": "${disciplina}",
-  "topico": "${topico || ''}"
-}
-
-Contexto:
-${resumo}
-      `.trim();
-
-      const response = await fetch('/api/gerar-questao', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/gerar-questao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           disciplina,
           topico,
           resumo,
           quantidade,
           dificuldade,
-          max_tokens: tokensPorDificuldade[dificuldade]
+          max_tokens: tokensPorDificuldade[dificuldade],
         }),
       });
-      rawResponse = await response.clone().json();
+      rawResponse = await response.clone().json(); 
       if (!response.ok) {
-        throw new Error(rawResponse.error || 'Erro ao gerar questões.');
+        throw new Error(rawResponse.error || "Erro ao gerar questões.");
       }
-      setQuestoes(rawResponse.questoes || []);
-      setSuccessMessage('Questões geradas com sucesso!');
-      setLlmPerformance({
-        duration: performance.now() - start,
-        prompt,
-        rawResponse
-      });
+      setQuestoesGeradasLLM(rawResponse.questoes || []);
+      setSuccessMessage("Questões geradas com sucesso!");
+      setLlmPerformance({ duration: performance.now() - start, prompt, rawResponse });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido ao gerar questões.');
+      setError(err instanceof Error ? err.message : "Erro desconhecido ao gerar questões.");
       setLlmPerformance(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Importa questões para o concurso/questoesStore
-  const importarQuestoes = () => {
+  const handleImportarQuestoes = async () => {
     setError(null);
     setSuccessMessage(null);
-    if (!questoes.length) {
-      setError('Nenhuma questão para importar.');
+    if (!user) {
+      setError("Usuário não autenticado.");
       return;
     }
-    // Persiste as questões associadas ao concurso
-    adicionarQuestoes(concursoId, questoes.map(q => {
-      // Alternativas: transformar string[] em Alternativa[]
-      const alternativas = q.alternativas.map((texto, idx) => {
-        const letra = String.fromCharCode(65 + idx); // "A", "B", "C", "D"
+    if (!questoesGeradasLLM.length) {
+      setError("Nenhuma questão para importar.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const questoesFormatadasParaStore: Array<Omit<Questao, "id" | "user_id" | "created_at" | "updated_at"> & { concurso_id?: string }> = questoesGeradasLLM.map(q => {
+        let idAlternativaCorreta = "";
+        const alternativas: AlternativaQuestao[] = q.alternativas.map((texto, idx) => {
+          const letra = String.fromCharCode(65 + idx);
+          const idAlternativa = crypto.randomUUID();
+          const ehCorreta = letra === q.correta;
+          if (ehCorreta) {
+            idAlternativaCorreta = idAlternativa;
+          }
+          return {
+            id: idAlternativa,
+            texto,
+            correta: ehCorreta,
+          };
+        });
+
+        if (!idAlternativaCorreta && alternativas.length > 0) {
+            console.warn(`Letra correta "${q.correta}" não encontrada para questão "${q.questao}". Marcando a primeira como correta por padrão.`);
+            alternativas[0].correta = true;
+            idAlternativaCorreta = alternativas[0].id;
+        }
+
         return {
-          id: letra,
-          texto,
-          correta: letra === q.correta
+          enunciado: q.questao,
+          alternativas,
+          resposta_correta_id: idAlternativaCorreta,
+          disciplina: q.disciplina,
+          topico: q.topico,
+          concurso_id: concursoId,
+          nivel_dificuldade: dificuldade,
         };
       });
-      return {
-        enunciado: q.questao,
-        alternativas,
-        respostaCorreta: q.correta,
-        disciplina: q.disciplina,
-        topico: q.topico
-      };
-    }));
-    setSuccessMessage('Questões importadas para o concurso!');
+
+      await importarQuestoesStore(questoesFormatadasParaStore);
+      await fetchQuestoes(user.id, concursoId);
+      setSuccessMessage("Questões importadas com sucesso para o concurso!");
+      setQuestoesGeradasLLM([]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao importar questões.");
+      console.error("Erro ao importar questões:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <Card className="p-4 md:p-6">
-      <h3 className="text-lg font-semibold mb-4">Gerar Questões Automáticas (LLM + MCP)</h3>
-      <div className="space-y-4">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <Wand2 className="h-5 w-5 mr-2 text-primary" />
+          Gerador de Questões (LLM + MCP)
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
         <Input
           label="Disciplina"
           value={disciplina}
-          onChange={e => setDisciplina(e.target.value)}
-          placeholder="Ex: Português"
+          onChange={(e) => setDisciplina(e.target.value)}
+          placeholder="Ex: Direito Constitucional"
           disabled={isLoading}
         />
         <Input
-          label="Tópico"
+          label="Tópico Específico"
           value={topico}
-          onChange={e => setTopico(e.target.value)}
-          placeholder="Ex: Interpretação de Texto"
+          onChange={(e) => setTopico(e.target.value)}
+          placeholder="Ex: Controle de Constitucionalidade"
           disabled={isLoading}
         />
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nível de Dificuldade</label>
+          <label htmlFor="dificuldade-llm" className="block text-sm font-medium text-muted-foreground mb-1">Nível de Dificuldade</label>
           <select
+            id="dificuldade-llm"
             value={dificuldade}
-            onChange={e => setDificuldade(e.target.value as 'facil' | 'medio' | 'dificil')}
+            onChange={(e) => setDificuldade(e.target.value as "facil" | "medio" | "dificil")}
             disabled={isLoading}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white text-sm mb-2"
+            className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-ring focus:border-ring bg-background text-foreground text-sm mb-2"
           >
             <option value="facil">Fácil</option>
             <option value="medio">Médio</option>
@@ -202,81 +194,86 @@ ${resumo}
           </select>
         </div>
         <Input
-          label="Quantidade de Questões"
+          label="Quantidade de Questões (1-5)"
           type="number"
           value={quantidade}
           min={1}
           max={5}
-          onChange={e => setQuantidade(Math.max(1, Math.min(5, parseInt(e.target.value) || 1)))}
+          onChange={(e) => setQuantidade(Math.max(1, Math.min(5, parseInt(e.target.value) || 1)))}
           disabled={isLoading}
         />
         <div className="flex gap-2 items-end">
           <Textarea
-            label="Resumo/Contexto (opcional, pode ser preenchido manualmente ou via MCP)"
+            label="Resumo/Contexto (Opcional - pode ser preenchido via MCP)"
             value={resumo}
-            onChange={e => setResumo(e.target.value)}
+            onChange={(e) => setResumo(e.target.value)}
             rows={3}
             disabled={isLoading}
+            placeholder="Cole aqui um resumo sobre o tópico ou use o botão ao lado para buscar via MCP."
           />
-          <Button onClick={buscarResumo} disabled={isLoading || !disciplina || !topico} variant="outline" size="sm">
+          <Button onClick={buscarResumo} disabled={isLoading || !disciplina || !topico} variant="outline" size="sm" className="self-end h-10">
             <Search className="h-4 w-4 mr-1" />
-            Buscar Resumo (MCP)
+            Buscar (MCP)
           </Button>
         </div>
-        <Button
-          onClick={gerarQuestoes}
-          disabled={isLoading || !disciplina || !quantidade}
-          className="w-full"
-        >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Wand2 className="h-4 w-4 mr-2" />
-          )}
+        <Button onClick={gerarQuestoes} disabled={isLoading || !disciplina || !quantidade} className="w-full">
+          {isLoading && questoesGeradasLLM.length === 0 ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
           Gerar Questões
         </Button>
 
-        {error && <Alert variant="error">{error}</Alert>}
-        {successMessage && <Alert variant="success">{successMessage}</Alert>}
+        {error && (
+          <Alert variant="error" title="Erro">
+            {error}
+          </Alert>
+        )}
+        {successMessage && (
+          <Alert variant="success" title="Sucesso" className="bg-green-50 border-green-300 text-green-700 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300">
+            {successMessage}
+          </Alert>
+        )}
 
-        {questoes.length > 0 && (
-          <div className="mt-6 space-y-3">
-            <h4 className="font-medium">Questões Geradas:</h4>
-            {questoes.map((q, i) => (
-              <Card key={i} className="p-3 bg-gray-50 dark:bg-gray-800">
-                <div className="mb-2 font-semibold">{q.questao}</div>
-                <ol className="list-decimal ml-5">
+        {questoesGeradasLLM.length > 0 && (
+          <div className="mt-6 space-y-3 pt-4 border-t border-border">
+            <h4 className="font-medium text-foreground">Questões Geradas:</h4>
+            {questoesGeradasLLM.map((q, i) => (
+              <Card key={i} className="p-3 bg-muted/50">
+                <div className="mb-2 font-semibold text-sm text-foreground">{i + 1}. {q.questao}</div>
+                <ol className="list-[upper-alpha] ml-5 space-y-1 text-sm">
                   {q.alternativas.map((alt, idx) => (
-                    <li key={idx} className={q.correta === String.fromCharCode(65 + idx) ? 'font-bold text-green-700' : ''}>
-                      {String.fromCharCode(65 + idx)}) {alt}
+                    <li key={idx} className={q.correta === String.fromCharCode(65 + idx) ? "font-semibold text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                      {alt}
                     </li>
                   ))}
                 </ol>
-                <div className="mt-2 text-xs text-gray-500">
+                <div className="mt-2 text-xs text-muted-foreground">
                   Disciplina: {q.disciplina} | Tópico: {q.topico}
                 </div>
               </Card>
             ))}
-            <Button onClick={importarQuestoes} variant="default" className="w-full mt-2">
-              <UploadCloud className="h-4 w-4 mr-2" />
-              Importar para Concurso
+            <Button onClick={handleImportarQuestoes} variant="default" className="w-full mt-3" disabled={isLoading || questoesGeradasLLM.length === 0}>
+              {isLoading && questoesGeradasLLM.length > 0 ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <UploadCloud className="h-4 w-4 mr-2" />}
+              Importar {questoesGeradasLLM.length} Questões para o Concurso
             </Button>
             {llmPerformance && (
-              <div className="mt-4 text-xs text-gray-500">
-                <div><b>Tempo de resposta LLM:</b> {llmPerformance.duration.toFixed(0)}ms</div>
-                <details>
-                  <summary className="cursor-pointer">Prompt usado</summary>
-                  <pre className="whitespace-pre-wrap">{llmPerformance.prompt}</pre>
-                </details>
-                <details>
-                  <summary className="cursor-pointer">Resposta bruta da LLM</summary>
-                  <pre className="whitespace-pre-wrap">{JSON.stringify(llmPerformance.rawResponse, null, 2)}</pre>
-                </details>
-              </div>
+              <details className="mt-4 text-xs text-muted-foreground">
+                <summary className="cursor-pointer hover:text-foreground">Detalhes da Geração (LLM)</summary>
+                <div className="mt-1 p-2 border border-border rounded bg-background">
+                  <div><b>Tempo de resposta LLM:</b> {llmPerformance.duration.toFixed(0)}ms</div>
+                  <details className="mt-1">
+                    <summary className="cursor-pointer hover:text-foreground">Prompt usado</summary>
+                    <pre className="whitespace-pre-wrap text-xs p-1 bg-muted rounded max-h-40 overflow-auto">{llmPerformance.prompt}</pre>
+                  </details>
+                  <details className="mt-1">
+                    <summary className="cursor-pointer hover:text-foreground">Resposta bruta da LLM</summary>
+                    <pre className="whitespace-pre-wrap text-xs p-1 bg-muted rounded max-h-40 overflow-auto">{JSON.stringify(llmPerformance.rawResponse, null, 2)}</pre>
+                  </details>
+                </div>
+              </details>
             )}
           </div>
         )}
-      </div>
+      </CardContent>
     </Card>
   );
 }
+

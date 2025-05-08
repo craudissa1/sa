@@ -10,7 +10,7 @@ import { useHiperfocosStore } from '../stores/hiperfocosStore'
 export default function HiperfocosPage() {
   // Separamos a interface em guias para melhor organização
   const [tabAtiva, setTabAtiva] = useState<'conversor' | 'alternancia' | 'visualizador' | 'temporizador'>('conversor')
-  const { hiperfocos } = useHiperfocosStore()
+  const { hiperfocoProjetos } = useHiperfocosStore()
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -83,24 +83,33 @@ export default function HiperfocosPage() {
       </div>
       
       {/* Card de resumo - visível em todas as abas */}
-      {hiperfocos.length > 0 && (
+      {hiperfocoProjetos.length > 0 && (
         <div className="mt-8 bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
           <h2 className="text-lg font-medium mb-2 text-gray-800 dark:text-white">Resumo dos Hiperfocos</h2>
           <div className="space-y-2">
-            {hiperfocos.map((hiperfoco) => (
-              <div 
-                key={hiperfoco.id} 
-                className="px-3 py-2 rounded-md flex justify-between"
-                style={{ backgroundColor: `${hiperfoco.cor}20` }}
-              >
-                <span className="font-medium" style={{ color: hiperfoco.cor }}>
-                  {hiperfoco.titulo}
-                </span>
-                <span className="text-gray-600 dark:text-gray-300">
-                  {hiperfoco.tarefas.filter(t => t.concluida).length}/{hiperfoco.tarefas.length} tarefas
-                </span>
-              </div>
-            ))}
+            {hiperfocoProjetos.map((hiperfoco) => {
+              const tarefasDoProjeto = hiperfoco.id ? 
+                useHiperfocosStore.getState().hiperfocoTarefas.filter(
+                  t => t.hiperfoco_id === hiperfoco.id
+                ) : [];
+              const tarefasConcluidas = tarefasDoProjeto.filter(t => t.concluida).length;
+              const totalTarefas = tarefasDoProjeto.length;
+              
+              return (
+                <div 
+                  key={hiperfoco.id} 
+                  className="px-3 py-2 rounded-md flex justify-between"
+                  style={{ backgroundColor: `${hiperfoco.cor}20` }}
+                >
+                  <span className="font-medium" style={{ color: hiperfoco.cor }}>
+                    {hiperfoco.titulo}
+                  </span>
+                  <span className="text-gray-600 dark:text-gray-300">
+                    {tarefasConcluidas}/{totalTarefas} tarefas
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

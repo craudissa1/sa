@@ -1,7 +1,9 @@
 'use client'
 
-import { ThemeProvider as NextThemesProvider } from 'next-themes'
-import { type ThemeProviderProps } from 'next-themes/dist/types'
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { type ThemeProviderProps } from 'next-themes/dist/types';
+import { AuthProvider } from './context/AuthContext';
+import StoreInitializer from './components/utils/StoreInitializer'; // Import StoreInitializer
 
 export function Providers({ children, ...props }: ThemeProviderProps) {
   return (
@@ -12,9 +14,13 @@ export function Providers({ children, ...props }: ThemeProviderProps) {
       disableTransitionOnChange
       {...props}
     >
-      <div suppressHydrationWarning>
-        {children}
-      </div>
+      <AuthProvider>
+        <StoreInitializer /> {/* Add StoreInitializer here */}
+        <div suppressHydrationWarning>
+          {children}
+        </div>
+      </AuthProvider>
     </NextThemesProvider>
-  )
+  );
 }
+

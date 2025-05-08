@@ -1,124 +1,122 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { usePainelDiaStore, BlocoTempo } from '@/app/stores/painelDiaStore'
-import { usePrioridadesStore, Prioridade } from '@/app/stores/prioridadesStore'
-import { usePerfilStore } from '@/app/stores/perfilStore'
+import { useEffect, useState } from "react";
+import { useAppStore, BlocoTempo } from "@/app/store"; // Ajustado para useAppStore
+import { usePerfilStore } from "@/app/stores/perfilStore"; // Mantido, pois é uma store de perfil válida
+import { useAuth } from "@/app/context/AuthContext"; // Para obter o usuário atual
+import { Prioridade, usePrioridadesStore } from "@/app/stores/prioridadesStore"; // Importando de prioridadesStore
 
 export type DashboardData = {
-  blocosDia: BlocoTempo[]
-  prioridadesDia: Prioridade[] 
-  proximosCompromissos: BlocoTempo[]
-  prioridadesPendentes: number
-  prioridadesConcluidas: number
-  metasPausas: number
-  mostrarPausas: boolean
-  metasPrioridades: number
-  nomeUsuario: string
+  blocosDia: BlocoTempo[];
+  prioridadesDia: Prioridade[];
+  proximosCompromissos: BlocoTempo[];
+  prioridadesPendentes: number;
+  prioridadesConcluidas: number;
+  metasPausas: number;
+  mostrarPausas: boolean;
+  metasPrioridades: number;
+  nomeUsuario: string;
   preferenciasVisuais: {
-    altoContraste: boolean
-    reducaoEstimulos: boolean
-    textoGrande: boolean
-  }
-  isLoading: boolean
-}
+    altoContraste: boolean;
+    reducaoEstimulos: boolean;
+    textoGrande: boolean;
+  };
+  isLoading: boolean;
+};
 
-// Valores padrão para garantir tipo seguro
 const defaultDashboardData: DashboardData = {
   blocosDia: [],
   prioridadesDia: [],
   proximosCompromissos: [],
   prioridadesPendentes: 0,
   prioridadesConcluidas: 0,
-  metasPausas: 4,
+  metasPausas: 4, // Valor padrão
   mostrarPausas: true,
-  metasPrioridades: 3,
-  nomeUsuario: 'Usuário',
+  metasPrioridades: 3, // Valor padrão
+  nomeUsuario: "Usuário",
   preferenciasVisuais: {
     altoContraste: false,
     reducaoEstimulos: false,
-    textoGrande: false
+    textoGrande: false,
   },
-  isLoading: true
-}
+  isLoading: true,
+};
 
 export const useDashboard = () => {
-  const [data, setData] = useState<DashboardData>(defaultDashboardData)
-  const [isLoading, setIsLoading] = useState(true)
-  
-  // Stores do Zustand
-  const { blocos } = usePainelDiaStore()
-  const { prioridades, getHistoricoPorData } = usePrioridadesStore()
-  const { 
-    nome, 
-    metasDiarias, 
-    pausasAtivas, 
-    preferenciasVisuais 
-  } = usePerfilStore()
-  
+  const [data, setData] = useState<DashboardData>(defaultDashboardData);
+  const { user } = useAuth(); // Usando o contexto de autenticação
+
+  // Hooks para accese às stores
+  const { blocosTempo } = useAppStore();
+  const { perfil } = usePerfilStore();
+  const { prioridades } = usePrioridadesStore();
+
   useEffect(() => {
-    const carregarDados = async () => {
-      try {
-        // Obtenha a data atual em formato ISO (YYYY-MM-DD)
-        const dataAtual = new Date().toISOString().split('T')[0]
-        
-        // Obtenha prioridades do dia atual
-        const prioridadesDoDia = getHistoricoPorData(dataAtual)
-        
-        // Calcule próximos compromissos (próximos 3 blocos a partir da hora atual)
-        const agora = new Date()
-        const horaAtual = `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`
-        
-        // Ordenar blocos por hora e filtrar os que ainda estão por vir
-        const blocosFuturos = [...blocos]
-          .sort((a, b) => {
-            const horaA = a.hora.split(':').map(Number)
-            const horaB = b.hora.split(':').map(Number)
-            
-            if (horaA[0] !== horaB[0]) {
-              return horaA[0] - horaB[0]
-            }
-            return horaA[1] - horaB[1]
-          })
-          .filter(bloco => bloco.hora >= horaAtual)
-          .slice(0, 3)
-        
-        // Calcule estatísticas de prioridades
-        const prioridadesPendentes = prioridadesDoDia.filter(p => !p.concluida).length
-        const prioridadesConcluidas = prioridadesDoDia.filter(p => p.concluida).length
-        
-        // Atualizar dados do dashboard
-        setData({
-          blocosDia: blocos || [],
-          prioridadesDia: prioridadesDoDia || [],
-          proximosCompromissos: blocosFuturos,
-          prioridadesPendentes,
-          prioridadesConcluidas,
-          metasPausas: metasDiarias?.pausasProgramadas || 4,
-          mostrarPausas: pausasAtivas,
-          metasPrioridades: metasDiarias?.tarefasPrioritarias || 3,
-          nomeUsuario: nome || 'Usuário',
-          preferenciasVisuais: preferenciasVisuais || {
-            altoContraste: false,
-            reducaoEstimulos: false,
-            textoGrande: false
-          },
-          isLoading: false
-        })
-      } catch (error) {
-        console.error("Erro ao carregar dados do dashboard:", error)
-        // Em caso de erro, definir valores padrão, mas manter isLoading como false
-        setData({
-          ...defaultDashboardData,
-          isLoading: false
-        })
-      } finally {
-        setIsLoading(false)
-      }
+    // Executar apenas se o usuário estiver autenticado
+    if (!user) {
+      setData((prev) => ({ ...prev, isLoading: false }));
+      return;
     }
+
+    // Dados do dia atual
+    const hoje = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+
+    // Filtrar blocos de tempo para o dia de hoje
+    const blocosDia = blocosTempo.filter((bloco) => bloco.data === hoje);
+
+    // Prioridades do dia
+    const prioridadesDia = prioridades.filter((p: Prioridade) => p.data === hoje);
     
-    carregarDados()
-  }, [blocos, prioridades, nome, metasDiarias, pausasAtivas, preferenciasVisuais, getHistoricoPorData])
-  
-  return { ...data, isLoading }
-} 
+    // Estatísticas de prioridades
+    const prioridadesPendentes = prioridadesDia.filter((p: Prioridade) => !p.concluida).length;
+    const prioridadesConcluidas = prioridadesDia.filter((p: Prioridade) => p.concluida).length;
+
+    // Próximos compromissos (ordenados por hora)
+    const agora = new Date();
+    const horaAtual = agora.getHours();
+    const minutoAtual = agora.getMinutes();
+    
+    const proximosCompromissos = blocosDia
+      .filter((bloco) => {
+        const [hora, minuto] = bloco.hora.split(':').map(Number);
+        return hora > horaAtual || (hora === horaAtual && minuto > minutoAtual);
+      })
+      .sort((a, b) => {
+        const [horaA, minutoA] = a.hora.split(':').map(Number);
+        const [horaB, minutoB] = b.hora.split(':').map(Number);
+        return horaA - horaB || minutoA - minutoB;
+      })
+      .slice(0, 3); // Apenas os próximos 3
+
+    // Dados de perfil do usuário (se disponível)
+    const metasPausas = perfil?.metasDiarias?.pausasProgramadas || 4;
+    const metasPrioridades = perfil?.metasDiarias?.tarefasPrioritarias || 3;
+    const nomeUsuario = perfil?.nome || "Usuário";
+    const mostrarPausas = perfil?.pausasAtivas !== undefined ? perfil.pausasAtivas : true;
+    
+    // Preferências visuais
+    const preferenciasVisuais = perfil?.preferenciasVisuais || {
+      altoContraste: false,
+      reducaoEstimulos: false,
+      textoGrande: false,
+    };
+
+    // Atualizar o estado
+    setData({
+      blocosDia,
+      prioridadesDia,
+      proximosCompromissos,
+      prioridadesPendentes,
+      prioridadesConcluidas,
+      metasPausas,
+      mostrarPausas,
+      metasPrioridades,
+      nomeUsuario,
+      preferenciasVisuais,
+      isLoading: false,
+    });
+
+  }, [user, blocosTempo, prioridades, perfil]);
+
+  return { ...data };
+};

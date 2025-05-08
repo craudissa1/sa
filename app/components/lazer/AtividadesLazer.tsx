@@ -78,7 +78,6 @@ export function AtividadesLazer() {
     
     adicionarAtividade({
       ...novaAtividade,
-      id: crypto.randomUUID(),
       concluida: false
     })
     
@@ -273,7 +272,7 @@ export function AtividadesLazer() {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => marcarConcluida(atividade.id)}
+                        onClick={() => marcarConcluida(atividade.id ?? '', true)}
                         aria-label="Marcar como concluída"
                       >
                         Concluir
@@ -282,7 +281,7 @@ export function AtividadesLazer() {
                     <Button 
                       variant="destructive" 
                       size="sm"
-                      onClick={() => removerAtividade(atividade.id)}
+                      onClick={() => removerAtividade(atividade.id ?? '')}
                       aria-label="Remover atividade"
                     >
                       <Trash className="h-4 w-4" />

@@ -16,7 +16,7 @@ interface QuestaoListProps {
 
 export function QuestaoList({ concursoId, onAddQuestao, onEditQuestao }: QuestaoListProps) {
   const { questoes, removerQuestao } = useQuestoesStore((state) => ({
-    questoes: state.questoes.filter(q => q.concursoId === concursoId),
+    questoes: state.questoes.filter(q => q.concurso_id === concursoId),
     removerQuestao: state.removerQuestao,
   }));
 
@@ -40,7 +40,7 @@ export function QuestaoList({ concursoId, onAddQuestao, onEditQuestao }: Questao
   };
 
   const handleSelecionarTodas = (checked: boolean) => {
-    const idsDaAba = questoes.filter(q => q.disciplina === abaAtiva).map(q => q.id);
+    const idsDaAba = questoes.filter(q => q.disciplina === abaAtiva && typeof q.id === 'string').map(q => q.id as string);
     setSelecionadas((prev) =>
       checked
         ? Array.from(new Set([...prev, ...idsDaAba]))
@@ -50,7 +50,7 @@ export function QuestaoList({ concursoId, onAddQuestao, onEditQuestao }: Questao
 
   const handleRealizarSimulado = () => {
     // Salva as questões selecionadas no localStorage para a página de simulado buscar
-    const questoesSelecionadas = questoes.filter(q => selecionadas.includes(q.id));
+    const questoesSelecionadas = questoes.filter(q => typeof q.id === 'string' && selecionadas.includes(q.id));
     localStorage.setItem('simulado_personalizado_questoes', JSON.stringify(questoesSelecionadas));
     router.push('/estudos/simulado-personalizado');
   };
@@ -96,7 +96,7 @@ export function QuestaoList({ concursoId, onAddQuestao, onEditQuestao }: Questao
           <div className="flex items-center mb-2">
             <Checkbox
               checked={
-                questoes.filter(q => q.disciplina === abaAtiva).every(q => selecionadas.includes(q.id))
+                questoes.filter(q => q.disciplina === abaAtiva).every(q => typeof q.id === 'string' && selecionadas.includes(q.id))
               }
               onChange={e => handleSelecionarTodas(e.target.checked)}
               label="Selecionar todas"
@@ -109,8 +109,8 @@ export function QuestaoList({ concursoId, onAddQuestao, onEditQuestao }: Questao
                 <div className="flex justify-between items-start">
                   <div className="flex items-start gap-3">
                     <Checkbox
-                      checked={selecionadas.includes(questao.id)}
-                      onChange={e => handleSelecionar(questao.id, e.target.checked)}
+                      checked={typeof questao.id === 'string' && selecionadas.includes(questao.id)}
+                      onChange={e => { if (typeof questao.id === 'string') { handleSelecionar(questao.id, e.target.checked); } }}
                     />
                     <div>
                       <p className="text-sm text-gray-500 mb-1">
@@ -124,7 +124,7 @@ export function QuestaoList({ concursoId, onAddQuestao, onEditQuestao }: Questao
                     <Button variant="outline" size="icon" onClick={() => onEditQuestao(questao)}>
                       <Edit size={16} />
                     </Button>
-                    <Button variant="destructive" size="icon" onClick={() => handleRemover(questao.id)}>
+                    <Button variant="destructive" size="icon" onClick={() => { if (typeof questao.id === 'string') { handleRemover(questao.id); } }}>
                       <Trash size={16} />
                     </Button>
                   </div>

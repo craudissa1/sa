@@ -14,7 +14,7 @@ import { Upload, ClipboardPaste, PlayCircle } from 'lucide-react'; // Importar �
 const SimuladoLoader: React.FC = () => {
   const { loadSimulado, setStatus } = useSimuladoStore();
   const { concursos } = useConcursosStore(); // Obter lista de concursos
-  const { buscarQuestoesPorConcurso } = useQuestoesStore(); // Obter função de busca
+  const { fetchQuestoes, questoes, currentUser } = useQuestoesStore(); // Obter função de busca
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [jsonText, setJsonText] = useState('');
@@ -27,7 +27,7 @@ const SimuladoLoader: React.FC = () => {
 
   // Popula as opções do select de concursos quando a lista de concursos mudar
   useEffect(() => {
-    const options = concursos.map(c => ({ value: c.id, label: c.titulo }));
+    const options = concursos.map(c => ({ value: c.id ?? "", label: c.titulo }));
     setConcursoOptions(options);
     // Se havia um concurso selecionado que não existe mais, limpa a seleção
     if (selectedConcursoId && !options.some(opt => opt.value === selectedConcursoId)) {
@@ -116,7 +116,7 @@ const SimuladoLoader: React.FC = () => {
   };
 
   // Handler para gerar simulado a partir dos critérios selecionados
-  const handleGenerateSimulado = () => {
+  const handleGenerateSimulado = async () => {
     if (!selectedConcursoId) {
       setError('Por favor, selecione um concurso.');
       return;
@@ -126,12 +126,21 @@ const SimuladoLoader: React.FC = () => {
       return;
     }
 
+    if (!currentUser) {
+      setError("Usuário não autenticado. Faça login para gerar o simulado.");
+      setIsLoading(false);
+      setStatus("idle");
+      return;
+    }
+
     setError(null);
     setIsLoading(true);
-    setStatus('loading');
+    setStatus("loading");
 
     try {
-      const questoesDisponiveis = buscarQuestoesPorConcurso(selectedConcursoId);
+      await fetchQuestoes(currentUser.id, selectedConcursoId); // Chamar fetchQuestoes e aguardar
+      // Agora 'questoes' da store estará atualizado com as questões do concurso selecionado
+      const questoesDisponiveis = questoes; // Acessar o estado atualizado da store
 
       if (questoesDisponiveis.length === 0) {
         throw new Error('Nenhuma questão encontrada para este concurso.');
@@ -168,7 +177,7 @@ const SimuladoLoader: React.FC = () => {
           q.alternativas.forEach((alt, altIndex) => {
             const key = String.fromCharCode(97 + altIndex); // a, b, c...
             alternativasObj[key] = alt.texto;
-            if (alt.id === q.respostaCorreta) {
+            if (alt.id === q.resposta_correta_id) {
               gabaritoKey = key;
             }
           });
@@ -179,8 +188,8 @@ const SimuladoLoader: React.FC = () => {
             alternativas: alternativasObj,
             gabarito: gabaritoKey,
             assunto: q.topico || q.disciplina, // Usa tópico ou disciplina como assunto
-            dificuldade: q.nivelDificuldade ? (['facil', 'medio', 'dificil'].indexOf(q.nivelDificuldade) + 1) : undefined, // Mapeia dificuldade se existir
-            explicacao: q.justificativa, // Usa justificativa como explicação
+            dificuldade: q.nivel_dificuldade ? (['facil', 'medio', 'dificil'].indexOf(q.nivel_dificuldade) + 1) : undefined, // Mapeia dificuldade se existir
+            explicacao: q.justificativa === null ? undefined : q.justificativa, // Usa justificativa como explicação
             // respondida, respostaUsuario, acertou não são parte da definição base da Questao no store
           };
         }),

@@ -113,7 +113,7 @@ export function ChecklistMedicamentos() {
                     }`}
                   >
                     <button
-                      onClick={() => handleToggleTomado(medicamento.id)}
+                      onClick={() => handleToggleTomado(medicamento.id ?? '')}
                       className="mr-2 text-green-600 dark:text-green-400 focus:outline-none"
                       aria-label={tomadoHoje ? 'Marcar como não tomado' : 'Marcar como tomado'}
                     >

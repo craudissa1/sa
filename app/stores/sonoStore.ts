@@ -1,101 +1,153 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from 'zustand';
+import { supabase } from '../lib/supabaseClient';
+import { User } from '@supabase/supabase-js';
 
+// Tipos Adaptados para Supabase
 export type RegistroSono = {
-  id: string
-  inicio: string // ISO date string
-  fim: string | null // ISO date string ou null se ainda não acordou
-  qualidade: number | null // 1-5, onde 5 é a melhor qualidade
-  notas: string
-}
+  id?: string; // UUID
+  user_id?: string;
+  inicio: string; // timestamptz
+  fim?: string | null; // timestamptz nullable
+  qualidade?: number | null; // int2 nullable (1-5)
+  notas?: string; // text nullable
+  created_at?: string;
+  updated_at?: string;
+};
 
 export type ConfiguracaoLembrete = {
-  id: string
-  tipo: 'dormir' | 'acordar'
-  horario: string // Formato HH:MM
-  diasSemana: number[] // 0-6, onde 0 é domingo
-  ativo: boolean
+  id?: string; // UUID
+  user_id?: string;
+  tipo: 'dormir' | 'acordar'; // text
+  horario: string; // time (HH:MM)
+  diasSemana: number[]; // int2[] (0-6)
+  ativo: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
+interface SonoState {
+  registros: RegistroSono[];
+  lembretes: ConfiguracaoLembrete[];
+  currentUser: User | null;
+
+  setCurrentUser: (user: User | null) => void;
+  fetchSonoData: (userId: string) => Promise<void>;
+
+  // Registros
+  adicionarRegistroSono: (registro: Omit<RegistroSono, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  atualizarRegistroSono: (id: string, dados: Partial<Omit<RegistroSono, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => Promise<void>;
+  removerRegistroSono: (id: string) => Promise<void>;
+
+  // Lembretes
+  adicionarLembrete: (lembrete: Omit<ConfiguracaoLembrete, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'ativo'>) => Promise<void>;
+  atualizarLembrete: (id: string, dados: Partial<Omit<ConfiguracaoLembrete, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => Promise<void>;
+  removerLembrete: (id: string) => Promise<void>;
+  alternarAtivoLembrete: (id: string, ativo: boolean) => Promise<void>;
 }
 
-export type SonoState = {
-  registros: RegistroSono[]
-  lembretes: ConfiguracaoLembrete[]
-  // Ações
-  adicionarRegistroSono: (inicio: string, fim?: string | null, qualidade?: number | null, notas?: string) => void
-  atualizarRegistroSono: (id: string, dados: Partial<Omit<RegistroSono, 'id'>>) => void
-  removerRegistroSono: (id: string) => void
-  adicionarLembrete: (tipo: 'dormir' | 'acordar', horario: string, diasSemana: number[]) => void
-  atualizarLembrete: (id: string, dados: Partial<Omit<ConfiguracaoLembrete, 'id'>>) => void
-  removerLembrete: (id: string) => void
-  alternarAtivoLembrete: (id: string) => void
-}
+const NOME_TABELA_REGISTROS = "sleep_logs";
+const NOME_TABELA_LEMBRETES = "sleep_reminders";
 
-export const useSonoStore = create<SonoState>()(
-  persist(
-    (set) => ({
-      registros: [],
-      lembretes: [],
-      
-      adicionarRegistroSono: (inicio, fim = null, qualidade = null, notas = '') => set((state) => ({
-        registros: [
-          ...state.registros,
-          {
-            id: Date.now().toString(),
-            inicio,
-            fim,
-            qualidade,
-            notas
-          }
-        ]
-      })),
-      
-      atualizarRegistroSono: (id, dados) => set((state) => ({
-        registros: state.registros.map((registro) => 
-          registro.id === id 
-            ? { ...registro, ...dados } 
-            : registro
-        )
-      })),
-      
-      removerRegistroSono: (id) => set((state) => ({
-        registros: state.registros.filter((registro) => registro.id !== id)
-      })),
-      
-      adicionarLembrete: (tipo, horario, diasSemana) => set((state) => ({
-        lembretes: [
-          ...state.lembretes,
-          {
-            id: Date.now().toString(),
-            tipo,
-            horario,
-            diasSemana,
-            ativo: true
-          }
-        ]
-      })),
-      
-      atualizarLembrete: (id, dados) => set((state) => ({
-        lembretes: state.lembretes.map((lembrete) => 
-          lembrete.id === id 
-            ? { ...lembrete, ...dados } 
-            : lembrete
-        )
-      })),
-      
-      removerLembrete: (id) => set((state) => ({
-        lembretes: state.lembretes.filter((lembrete) => lembrete.id !== id)
-      })),
-      
-      alternarAtivoLembrete: (id) => set((state) => ({
-        lembretes: state.lembretes.map((lembrete) =>
-          lembrete.id === id
-            ? { ...lembrete, ativo: !lembrete.ativo }
-            : lembrete
-        )
-      }))
-    }),
-    {
-      name: 'sono-storage',
+export const useSonoStore = create<SonoState>()((set, get) => ({
+  registros: [],
+  lembretes: [],
+  currentUser: null,
+
+  setCurrentUser: (user) => set({ currentUser: user }),
+
+  fetchSonoData: async (userId) => {
+    if (!userId) return;
+    try {
+      const [
+        { data: registrosData, error: registrosError },
+        { data: lembretesData, error: lembretesError },
+      ] = await Promise.all([
+        supabase.from(NOME_TABELA_REGISTROS).select('*').eq('user_id', userId).order('inicio', { ascending: false }),
+        supabase.from(NOME_TABELA_LEMBRETES).select('*').eq('user_id', userId).order('horario', { ascending: true }),
+      ]);
+
+      if (registrosError) throw registrosError;
+      if (lembretesError) throw lembretesError;
+
+      set({
+        registros: registrosData || [],
+        lembretes: lembretesData || [],
+      });
+    } catch (error) {
+      console.error("Error fetching sono data:", error);
+      set({ registros: [], lembretes: [] });
     }
-  )
-)
+  },
+
+  // Registros de Sono
+  adicionarRegistroSono: async (registro) => {
+    const user = get().currentUser;
+    if (!user) throw new Error("User not authenticated");
+    const { data, error } = await supabase
+      .from(NOME_TABELA_REGISTROS)
+      .insert([{ ...registro, user_id: user.id }])
+      .select();
+    if (error) throw error;
+    if (data) set((state) => ({ registros: [...data, ...state.registros].sort((a, b) => new Date(b.inicio).getTime() - new Date(a.inicio).getTime()) }));
+  },
+
+  atualizarRegistroSono: async (id, dados) => {
+    const { data, error } = await supabase
+      .from(NOME_TABELA_REGISTROS)
+      .update(dados)
+      .eq('id', id)
+      .select();
+    if (error) throw error;
+    if (data) set((state) => ({ registros: state.registros.map((r) => (r.id === id ? data[0] : r)) }));
+  },
+
+  removerRegistroSono: async (id) => {
+    const { error } = await supabase
+      .from(NOME_TABELA_REGISTROS)
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    set((state) => ({ registros: state.registros.filter((r) => r.id !== id) }));
+  },
+
+  // Lembretes de Sono
+  adicionarLembrete: async (lembrete) => {
+    const user = get().currentUser;
+    if (!user) throw new Error("User not authenticated");
+    const { data, error } = await supabase
+      .from(NOME_TABELA_LEMBRETES)
+      .insert([{ ...lembrete, user_id: user.id, ativo: true }])
+      .select();
+    if (error) throw error;
+    if (data) set((state) => ({ lembretes: [...state.lembretes, ...data].sort((a, b) => a.horario.localeCompare(b.horario)) }));
+  },
+
+  atualizarLembrete: async (id, dados) => {
+    const { data, error } = await supabase
+      .from(NOME_TABELA_LEMBRETES)
+      .update(dados)
+      .eq('id', id)
+      .select();
+    if (error) throw error;
+    if (data) set((state) => ({ lembretes: state.lembretes.map((l) => (l.id === id ? data[0] : l)).sort((a, b) => a.horario.localeCompare(b.horario)) }));
+  },
+
+  removerLembrete: async (id) => {
+    const { error } = await supabase
+      .from(NOME_TABELA_LEMBRETES)
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    set((state) => ({ lembretes: state.lembretes.filter((l) => l.id !== id) }));
+  },
+
+  alternarAtivoLembrete: async (id, ativo) => {
+    const { data, error } = await supabase
+      .from(NOME_TABELA_LEMBRETES)
+      .update({ ativo })
+      .eq('id', id)
+      .select();
+    if (error) throw error;
+    if (data) set((state) => ({ lembretes: state.lembretes.map((l) => (l.id === id ? data[0] : l)) }));
+  },
+}));

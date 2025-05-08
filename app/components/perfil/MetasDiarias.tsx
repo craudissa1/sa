@@ -5,7 +5,13 @@ import { usePerfilStore } from '../../stores/perfilStore'
 import { Save, Target, Clock, Droplet, Coffee } from 'lucide-react'
 
 export function MetasDiarias() {
-  const { metasDiarias, atualizarMetasDiarias } = usePerfilStore()
+  const perfilStore = usePerfilStore()
+  const metasDiarias = perfilStore.perfil?.metasDiarias || {
+    horasSono: 8,
+    tarefasPrioritarias: 3,
+    coposAgua: 8,
+    pausasProgramadas: 4
+  }
   const [editando, setEditando] = useState(false)
   const [metas, setMetas] = useState(metasDiarias)
   
@@ -28,7 +34,7 @@ export function MetasDiarias() {
   }
   
   const salvarAlteracoes = () => {
-    atualizarMetasDiarias(metas)
+    perfilStore.updatePerfil({ metasDiarias: metas })
     setEditando(false)
   }
   

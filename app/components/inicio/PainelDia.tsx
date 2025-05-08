@@ -1,101 +1,134 @@
+
 'use client'
 
-import { useState } from 'react'
-import { Edit2, Check, X, Trash2, Plus } from 'lucide-react'
-import { Button } from '@/app/components/ui/Button'
-import { Input } from '@/app/components/ui/Input'
-import { usePainelDiaStore, BlocoTempo } from '@/app/stores/painelDiaStore'
+import { useState, useEffect } from 'react';
+import { Edit2, Check, X, Trash2, Plus, Loader2 } from 'lucide-react';
+import { Button } from '@/app/components/ui/Button';
+import { Input } from '@/app/components/ui/Input';
+import { useAppStore, BlocoTempo } from '@/app/store'; // Importar de useAppStore
+import { useAuth } from '@/app/context/AuthContext'; // Para obter o usuário atual
 
 export function PainelDia() {
-  const { blocos, editarAtividade, editarCategoria, adicionarBloco, removerBloco } = usePainelDiaStore()
-  const [blocoEditando, setBlocoEditando] = useState<string | null>(null)
-  const [atividadeEditando, setAtividadeEditando] = useState('')
-  const [novoBloco, setNovoBloco] = useState(false)
-  const [novaHora, setNovaHora] = useState('')
-  const [novaAtividade, setNovaAtividade] = useState('')
+  const { user } = useAuth();
+  const { 
+    blocosTempo, 
+    adicionarBlocoTempo, 
+    atualizarBlocoTempo, 
+    removerBlocoTempo, 
+    fetchInitialData 
+  } = useAppStore();
   
-  // Função para obter a cor de fundo baseada na categoria
+  const [blocoEditando, setBlocoEditando] = useState<string | null>(null);
+  const [atividadeEditando, setAtividadeEditando] = useState('');
+  const [categoriaEditando, setCategoriaEditando] = useState<BlocoTempo['categoria']>('nenhuma');
+  const [novoBloco, setNovoBloco] = useState(false);
+  const [novaHora, setNovaHora] = useState('');
+  const [novaAtividade, setNovaAtividade] = useState('');
+  const [dataAtual, setDataAtual] = useState(new Date().toISOString().split('T')[0]); // YYYY-MM-DD
+  const [loading, setLoading] = useState(false);
+
+  // Filtra blocos de tempo para a data atual
+  const blocosDoDia = blocosTempo.filter(bloco => bloco.data === dataAtual);
+
   const getBgColor = (categoria: BlocoTempo['categoria']) => {
     switch (categoria) {
-      case 'inicio':
-        return 'bg-opacity-40 bg-inicio-light border-inicio-primary'
-      case 'alimentacao':
-        return 'bg-opacity-40 bg-alimentacao-light border-alimentacao-primary'
-      case 'estudos':
-        return 'bg-opacity-40 bg-estudos-light border-estudos-primary'
-      case 'saude':
-        return 'bg-opacity-40 bg-saude-light border-saude-primary'
-      case 'lazer':
-        return 'bg-opacity-40 bg-lazer-light border-lazer-primary'
-      default:
-        return 'bg-gray-100 bg-opacity-40 border-gray-300 dark:bg-gray-700 dark:border-gray-600'
+      case 'inicio': return 'bg-opacity-40 bg-inicio-light border-inicio-primary';
+      case 'alimentacao': return 'bg-opacity-40 bg-alimentacao-light border-alimentacao-primary';
+      case 'estudos': return 'bg-opacity-40 bg-estudos-light border-estudos-primary';
+      case 'saude': return 'bg-opacity-40 bg-saude-light border-saude-primary';
+      case 'lazer': return 'bg-opacity-40 bg-lazer-light border-lazer-primary';
+      default: return 'bg-gray-100 bg-opacity-40 border-gray-300 dark:bg-gray-700 dark:border-gray-600';
     }
-  }
+  };
 
-  // Iniciar edição de um bloco
   const iniciarEdicao = (bloco: BlocoTempo) => {
-    setBlocoEditando(bloco.id)
-    setAtividadeEditando(bloco.atividade)
-  }
+    setBlocoEditando(bloco.id!);
+    setAtividadeEditando(bloco.atividade);
+    setCategoriaEditando(bloco.categoria);
+  };
 
-  // Salvar a edição de um bloco
-  const salvarEdicao = () => {
-    if (blocoEditando) {
-      editarAtividade(blocoEditando, atividadeEditando)
-      cancelarEdicao()
+  const salvarEdicao = async () => {
+    if (blocoEditando && user) {
+      setLoading(true);
+      try {
+        await atualizarBlocoTempo(blocoEditando, { atividade: atividadeEditando, categoria: categoriaEditando });
+      } catch (error) {
+        console.error("Erro ao salvar edição do bloco de tempo:", error);
+        // Adicionar feedback para o usuário aqui, se necessário
+      }
+      cancelarEdicao();
+      setLoading(false);
     }
-  }
+  };
 
-  // Cancelar a edição
   const cancelarEdicao = () => {
-    setBlocoEditando(null)
-    setAtividadeEditando('')
-  }
+    setBlocoEditando(null);
+    setAtividadeEditando('');
+    setCategoriaEditando('nenhuma');
+  };
 
-  // Função para mostrar o formulário de novo bloco
   const mostrarNovoBloco = () => {
-    setNovoBloco(true)
-    setNovaHora('')
-    setNovaAtividade('')
-  }
+    setNovoBloco(true);
+    setNovaHora('');
+    setNovaAtividade('');
+  };
 
-  // Função para adicionar um novo bloco
-  const adicionarNovoBloco = () => {
-    if (novaHora && novaAtividade) {
-      const id = `${Date.now()}`
-      adicionarBloco({
-        id,
-        hora: novaHora,
-        atividade: novaAtividade,
-        categoria: 'nenhuma'
-      })
-      setNovoBloco(false)
-      setNovaHora('')
-      setNovaAtividade('')
+  const adicionarNovoBlocoHandler = async () => {
+    if (novaHora && novaAtividade && user) {
+      setLoading(true);
+      try {
+        await adicionarBlocoTempo({
+          hora: novaHora,
+          atividade: novaAtividade,
+          categoria: 'nenhuma', // Categoria padrão para novos blocos
+          data: dataAtual,
+        });
+      } catch (error) {
+        console.error("Erro ao adicionar novo bloco de tempo:", error);
+        // Adicionar feedback para o usuário aqui, se necessário
+      }
+      setNovoBloco(false);
+      setNovaHora('');
+      setNovaAtividade('');
+      setLoading(false);
+    }
+  };
+  
+  const removerBlocoHandler = async (id: string) => {
+    if (user && id) {
+        setLoading(true);
+        try {
+            await removerBlocoTempo(id);
+        } catch (error) {
+            console.error("Erro ao remover bloco de tempo:", error);
+        }
+        setLoading(false);
     }
   }
 
-  // Função para cancelar a adição de novo bloco
   const cancelarNovoBloco = () => {
-    setNovoBloco(false)
-    setNovaHora('')
-    setNovaAtividade('')
-  }
+    setNovoBloco(false);
+    setNovaHora('');
+    setNovaAtividade('');
+  };
 
-  // Ordenar blocos por hora
-  const blocosOrdenados = [...blocos].sort((a, b) => {
+  const blocosOrdenados = [...blocosDoDia].sort((a, b) => {
     const horaA = a.hora.split(':').map(Number);
     const horaB = b.hora.split(':').map(Number);
-    
-    if (horaA[0] !== horaB[0]) {
-      return horaA[0] - horaB[0];
-    }
+    if (horaA[0] !== horaB[0]) return horaA[0] - horaB[0];
     return horaA[1] - horaB[1];
   });
 
+  // useEffect para carregar dados iniciais se o usuário estiver logado
+  // O StoreInitializer já deve estar fazendo isso, mas podemos garantir aqui para este componente específico
+  // ou se precisarmos de lógica adicional ao carregar os blocos de tempo.
+  // Por ora, vamos assumir que StoreInitializer cuida do fetch inicial.
+
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      {loading && <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'><Loader2 className='animate-spin text-white' size={48}/></div>}
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Painel do Dia ({new Date(dataAtual + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })})</h3>
         <Button 
           size="sm" 
           variant="outline" 
@@ -128,26 +161,17 @@ export function PainelDia() {
               />
             </div>
             <div className="flex justify-end gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={cancelarNovoBloco}
-              >
-                Cancelar
-              </Button>
-              <Button
-                size="sm"
-                onClick={adicionarNovoBloco}
-                disabled={!novaHora || !novaAtividade}
-              >
-                Adicionar
-              </Button>
+              <Button size="sm" variant="outline" onClick={cancelarNovoBloco}>Cancelar</Button>
+              <Button size="sm" onClick={adicionarNovoBlocoHandler} disabled={!novaHora || !novaAtividade || loading}>Adicionar</Button>
             </div>
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-2">
+        {blocosOrdenados.length === 0 && !novoBloco && (
+            <p className='text-sm text-muted-foreground text-center py-4'>Nenhum bloco de tempo para hoje ainda. Adicione um!</p>
+        )}
         {blocosOrdenados.map((bloco) => (
           <div
             key={bloco.id}
@@ -169,22 +193,8 @@ export function PainelDia() {
                     autoFocus
                   />
                   <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={salvarEdicao}
-                      aria-label="Salvar edição"
-                    >
-                      <Check className="h-4 w-4 text-green-500" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={cancelarEdicao}
-                      aria-label="Cancelar edição"
-                    >
-                      <X className="h-4 w-4 text-red-500" />
-                    </Button>
+                    <Button size="sm" variant="ghost" onClick={salvarEdicao} aria-label="Salvar edição" disabled={loading}><Check className="h-4 w-4 text-green-500" /></Button>
+                    <Button size="sm" variant="ghost" onClick={cancelarEdicao} aria-label="Cancelar edição" disabled={loading}><X className="h-4 w-4 text-red-500" /></Button>
                   </div>
                 </div>
               ) : (
@@ -193,73 +203,30 @@ export function PainelDia() {
                     {bloco.atividade}
                   </span>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => iniciarEdicao(bloco)}
-                      aria-label="Editar este horário"
-                    >
-                      <Edit2 className="h-4 w-4 text-gray-500" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removerBloco(bloco.id)}
-                      aria-label="Remover este horário"
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => iniciarEdicao(bloco)} aria-label="Editar este horário"><Edit2 className="h-4 w-4 text-gray-500" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => removerBlocoHandler(bloco.id!)} aria-label="Remover este horário" disabled={loading}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                   </div>
                 </>
               )}
             </div>
             
             {blocoEditando === bloco.id && (
-              <div className="mt-2 flex flex-wrap gap-1">
+              <div className="mt-2 flex flex-wrap gap-1 items-center">
                 <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">
                   Categoria:
                 </span>
                 <div className="flex flex-wrap gap-1">
-                  <Button
-                    size="sm"
-                    variant={bloco.categoria === 'alimentacao' ? 'default' : 'outline'}
-                    className="py-0 px-2 h-6 text-xs bg-alimentacao-light text-alimentacao-primary border-alimentacao-primary"
-                    onClick={() => editarCategoria(bloco.id, 'alimentacao')}
-                  >
-                    Alimentação
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={bloco.categoria === 'estudos' ? 'default' : 'outline'}
-                    className="py-0 px-2 h-6 text-xs bg-estudos-light text-estudos-primary border-estudos-primary"
-                    onClick={() => editarCategoria(bloco.id, 'estudos')}
-                  >
-                    Estudos
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={bloco.categoria === 'saude' ? 'default' : 'outline'}
-                    className="py-0 px-2 h-6 text-xs bg-saude-light text-saude-primary border-saude-primary"
-                    onClick={() => editarCategoria(bloco.id, 'saude')}
-                  >
-                    Saúde
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={bloco.categoria === 'lazer' ? 'default' : 'outline'}
-                    className="py-0 px-2 h-6 text-xs bg-lazer-light text-lazer-primary border-lazer-primary"
-                    onClick={() => editarCategoria(bloco.id, 'lazer')}
-                  >
-                    Lazer
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={bloco.categoria === 'nenhuma' ? 'default' : 'outline'}
-                    className="py-0 px-2 h-6 text-xs"
-                    onClick={() => editarCategoria(bloco.id, 'nenhuma')}
-                  >
-                    Nenhuma
-                  </Button>
+                  {(['alimentacao', 'estudos', 'saude', 'lazer', 'nenhuma'] as BlocoTempo['categoria'][]).map(cat => (
+                    <Button
+                      key={cat}
+                      size="sm"
+                      variant={categoriaEditando === cat ? 'default' : 'outline'}
+                      className={`py-0 px-2 h-6 text-xs ${getBgColor(cat).replace('bg-opacity-40', '')}`}
+                      onClick={() => setCategoriaEditando(cat)}
+                    >
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </Button>
+                  ))}
                 </div>
               </div>
             )}
@@ -267,5 +234,6 @@ export function PainelDia() {
         ))}
       </div>
     </div>
-  )
+  );
 }
+

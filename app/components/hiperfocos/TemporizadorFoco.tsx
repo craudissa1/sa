@@ -5,7 +5,7 @@ import { useHiperfocosStore } from '../../stores/hiperfocosStore'
 import { Clock, Play, Pause, RotateCcw, Bell, Volume2, VolumeX } from 'lucide-react'
 
 export function TemporizadorFoco() {
-  const { hiperfocos } = useHiperfocosStore()
+  const { hiperfocoProjetos } = useHiperfocosStore()
   
   const [hiperfocoSelecionadoId, setHiperfocoSelecionadoId] = useState<string>('')
   const [temporizadorAtivo, setTemporizadorAtivo] = useState(false)
@@ -22,7 +22,7 @@ export function TemporizadorFoco() {
   useEffect(() => {
     if (!hiperfocoSelecionadoId) return
     
-    const hiperfoco = hiperfocos.find(h => h.id === hiperfocoSelecionadoId)
+    const hiperfoco = hiperfocoProjetos.find(h => h.id === hiperfocoSelecionadoId)
     
     if (hiperfoco && hiperfoco.tempoLimite) {
       setTempoTotal(hiperfoco.tempoLimite * 60) // converter minutos para segundos
@@ -39,7 +39,7 @@ export function TemporizadorFoco() {
     if (temporizadorAtivo) {
       pararTemporizador()
     }
-  }, [hiperfocoSelecionadoId, hiperfocos])
+  }, [hiperfocoSelecionadoId, hiperfocoProjetos])
   
   // Limpar timer ao desmontar componente
   useEffect(() => {
@@ -156,7 +156,7 @@ export function TemporizadorFoco() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-hiperfocos-primary focus:border-hiperfocos-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             >
               <option value="">Selecione um hiperfoco</option>
-              {hiperfocos.map((hiperfoco) => (
+              {hiperfocoProjetos.map((hiperfoco) => (
                 <option key={hiperfoco.id} value={hiperfoco.id}>
                   {hiperfoco.titulo} {hiperfoco.tempoLimite ? `(${hiperfoco.tempoLimite} min)` : ''}
                 </option>
@@ -219,7 +219,7 @@ export function TemporizadorFoco() {
               className="absolute inset-0 rounded-full bg-gray-200 dark:bg-gray-600"
               style={{
                 background: `conic-gradient(
-                  ${hiperfocoSelecionadoId && hiperfocos.find(h => h.id === hiperfocoSelecionadoId)?.cor || '#0EA5E9'} ${calcularProgresso()}%, 
+                  ${hiperfocoSelecionadoId && hiperfocoProjetos.find(h => h.id === hiperfocoSelecionadoId)?.cor || '#0EA5E9'} ${calcularProgresso()}%, 
                   #9CA3AF ${calcularProgresso()}%
                 )`
               }}

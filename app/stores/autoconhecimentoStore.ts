@@ -1,160 +1,145 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from "zustand";
+import { supabase } from "../lib/supabaseClient"; // Ajuste o caminho se necessário
+import { User } from "@supabase/supabase-js";
 
-// Tipo para as notas
-export type Nota = {
-  id: string
-  titulo: string
-  conteudo: string
-  secao: 'quem-sou' | 'meus-porques' | 'meus-padroes'
-  tags: string[]
-  dataCriacao: string
-  dataAtualizacao: string
-  imagemUrl?: string // URL para imagem âncora (opcional)
+// Tipos (adaptados para Supabase)
+export type NotaAutoconhecimento = {
+  id?: string; // Gerenciado pelo Supabase
+  user_id?: string;
+  titulo: string;
+  conteudo: string;
+  secao: "quem-sou" | "meus-porques" | "meus-padroes";
+  tags: string[]; // Supabase pode armazenar arrays de texto
+  dataCriacao?: string; // Supabase gerencia created_at
+  dataAtualizacao?: string; // Supabase gerencia updated_at
+  imagemUrl?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+// O modo refúgio é uma configuração de UI, pode permanecer local ou ser sincronizado se necessário.
+// Por simplicidade, vamos mantê-lo local na store, mas não será persistido no Supabase diretamente nesta store.
+// Se precisar ser sincronizado, seria parte de uma tabela de configurações do usuário.
+
+interface AutoconhecimentoState {
+  notas: NotaAutoconhecimento[];
+  modoRefugio: boolean; // Mantido localmente por enquanto
+  currentUser: User | null;
+
+  setCurrentUser: (user: User | null) => void;
+  fetchNotasAutoconhecimento: (userId: string) => Promise<void>;
+
+  adicionarNota: (nota: Omit<NotaAutoconhecimento, "id" | "user_id" | "created_at" | "updated_at" | "dataCriacao" | "dataAtualizacao">) => Promise<string | undefined>;
+  atualizarNota: (id: string, updates: Partial<Omit<NotaAutoconhecimento, "id" | "user_id" | "created_at" | "updated_at" | "dataCriacao" | "dataAtualizacao">>) => Promise<void>;
+  removerNota: (id: string) => Promise<void>;
+  // Tags e imagem são parte do objeto Nota, atualizados via atualizarNota.
+
+  alternarModoRefugio: () => void;
+  // buscarNotas: (termo: string) => NotaAutoconhecimento[]; // A busca pode ser feita no cliente ou com query no Supabase
 }
 
-// Tipo para o estado da store
-export type AutoconhecimentoState = {
-  notas: Nota[]
-  modoRefugio: boolean
-  // Ações
-  adicionarNota: (
-    titulo: string,
-    conteudo: string,
-    secao: 'quem-sou' | 'meus-porques' | 'meus-padroes',
-    tags?: string[],
-    imagemUrl?: string
-  ) => string
-  atualizarNota: (
-    id: string,
-    dados: Partial<Omit<Nota, 'id' | 'dataCriacao'>>
-  ) => void
-  removerNota: (id: string) => void
-  adicionarTag: (id: string, tag: string) => void
-  removerTag: (id: string, tag: string) => void
-  adicionarImagem: (id: string, imagemUrl: string) => void
-  removerImagem: (id: string) => void
-  alternarModoRefugio: () => void
-  buscarNotas: (termo: string) => Nota[]
-}
+const NOME_TABELA_NOTAS_AUTOCONHECIMENTO = "self_knowledge_notes";
 
-// Estado inicial
-const estadoInicial = {
+export const useAutoconhecimentoStore = create<AutoconhecimentoState>()((set, get) => ({
   notas: [],
-  modoRefugio: false
-}
+  modoRefugio: false,
+  currentUser: null,
 
-// Criação da store com persistência
-export const useAutoconhecimentoStore = create<AutoconhecimentoState>()(
-  persist(
-    (set, get) => ({
-      ...estadoInicial,
-      
-      adicionarNota: (titulo, conteudo, secao, tags = [], imagemUrl) => {
-        const id = Date.now().toString()
-        const agora = new Date().toISOString()
-        
-        set((state) => ({
-          notas: [
-            ...state.notas,
-            {
-              id,
-              titulo,
-              conteudo,
-              secao,
-              tags,
-              dataCriacao: agora,
-              dataAtualizacao: agora,
-              imagemUrl
-            }
-          ]
-        }))
-        
-        return id
-      },
-      
-      atualizarNota: (id, dados) => set((state) => ({
-        notas: state.notas.map((nota) => 
-          nota.id === id 
-            ? { 
-                ...nota, 
-                ...dados, 
-                dataAtualizacao: new Date().toISOString() 
-              } 
-            : nota
-        )
-      })),
-      
-      removerNota: (id) => set((state) => ({
-        notas: state.notas.filter((nota) => nota.id !== id)
-      })),
-      
-      adicionarTag: (id, tag) => set((state) => ({
-        notas: state.notas.map((nota) => 
-          nota.id === id && !nota.tags.includes(tag)
-            ? { 
-                ...nota, 
-                tags: [...nota.tags, tag],
-                dataAtualizacao: new Date().toISOString() 
-              } 
-            : nota
-        )
-      })),
-      
-      removerTag: (id, tag) => set((state) => ({
-        notas: state.notas.map((nota) => 
-          nota.id === id
-            ? { 
-                ...nota, 
-                tags: nota.tags.filter((t) => t !== tag),
-                dataAtualizacao: new Date().toISOString() 
-              } 
-            : nota
-        )
-      })),
-      
-      adicionarImagem: (id, imagemUrl) => set((state) => ({
-        notas: state.notas.map((nota) => 
-          nota.id === id
-            ? { 
-                ...nota, 
-                imagemUrl,
-                dataAtualizacao: new Date().toISOString() 
-              } 
-            : nota
-        )
-      })),
-      
-      removerImagem: (id) => set((state) => ({
-        notas: state.notas.map((nota) => 
-          nota.id === id
-            ? { 
-                ...nota, 
-                imagemUrl: undefined,
-                dataAtualizacao: new Date().toISOString() 
-              } 
-            : nota
-        )
-      })),
-      
-      alternarModoRefugio: () => set((state) => ({
-        modoRefugio: !state.modoRefugio
-      })),
-      
-      buscarNotas: (termo) => {
-        const { notas } = get()
-        if (!termo.trim()) return notas
-        
-        const termoBusca = termo.toLowerCase()
-        return notas.filter((nota) => 
-          nota.titulo.toLowerCase().includes(termoBusca) ||
-          nota.conteudo.toLowerCase().includes(termoBusca) ||
-          nota.tags.some((tag) => tag.toLowerCase().includes(termoBusca))
-        )
+  setCurrentUser: (user) => set({ currentUser: user }),
+
+  fetchNotasAutoconhecimento: async (userId) => {
+    if (!userId) return;
+    try {
+      const { data, error } = await supabase
+        .from(NOME_TABELA_NOTAS_AUTOCONHECIMENTO)
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching notas de autoconhecimento:", error.message);
+        throw error;
       }
-    }),
-    {
-      name: 'autoconhecimento-storage',
+      set({ notas: data || [] });
+    } catch (error) {
+      console.error("Error in fetchNotasAutoconhecimento:", error);
+      set({ notas: [] });
     }
-  )
-)
+  },
+
+  adicionarNota: async (nota) => {
+    const user = get().currentUser;
+    if (!user) throw new Error("User not authenticated");
+    const { data, error } = await supabase
+      .from(NOME_TABELA_NOTAS_AUTOCONHECIMENTO)
+      .insert([{ ...nota, user_id: user.id }])
+      .select()
+      .single(); // Espera um único objeto de nota retornado
+    if (error) {
+      console.error("Error adding nota de autoconhecimento:", error.message);
+      throw error;
+    }
+    if (data) {
+      set((state) => ({ notas: [data, ...state.notas] })); // Adiciona no início para visualização mais recente
+      return data.id; // Retorna o ID da nota criada
+    }
+    return undefined;
+  },
+
+  atualizarNota: async (id, updates) => {
+    const { data, error } = await supabase
+      .from(NOME_TABELA_NOTAS_AUTOCONHECIMENTO)
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) {
+      console.error("Error updating nota de autoconhecimento:", error.message);
+      throw error;
+    }
+    if (data) {
+      set((state) => ({
+        notas: state.notas.map((n) => (n.id === id ? data : n)),
+      }));
+    }
+  },
+
+  removerNota: async (id) => {
+    const { error } = await supabase
+      .from(NOME_TABELA_NOTAS_AUTOCONHECIMENTO)
+      .delete()
+      .eq("id", id);
+    if (error) {
+      console.error("Error removing nota de autoconhecimento:", error.message);
+      throw error;
+    }
+    set((state) => ({ notas: state.notas.filter((n) => n.id !== id) }));
+  },
+
+  alternarModoRefugio: () => set((state) => ({ modoRefugio: !state.modoRefugio })),
+
+  // A função buscarNotas pode ser implementada no lado do cliente filtrando o estado `notas`
+  // ou, para datasets maiores, fazendo uma query específica ao Supabase com `like` ou `ilike` ou full-text search.
+  // Exemplo cliente-side:
+  // buscarNotas: (termo: string) => {
+  //   const notas = get().notas;
+  //   if (!termo.trim()) return notas;
+  //   const termoBusca = termo.toLowerCase();
+  //   return notas.filter(nota => 
+  //     nota.titulo.toLowerCase().includes(termoBusca) ||
+  //     nota.conteudo.toLowerCase().includes(termoBusca) ||
+  //     (nota.tags && nota.tags.some(tag => tag.toLowerCase().includes(termoBusca)))
+  //   );
+  // }
+}));
+
+// As Realtime subscriptions para esta tabela devem ser configuradas no StoreInitializer.tsx
+// Exemplo para NOME_TABELA_NOTAS_AUTOCONHECIMENTO:
+// setupSubscription(NOME_TABELA_NOTAS_AUTOCONHECIMENTO, (payload) => {
+//   const { eventType, new: newRecord, old: oldRecord } = payload;
+//   const store = useAutoconhecimentoStore.getState();
+//   if (eventType === "INSERT") store.fetchNotasAutoconhecimento(store.currentUser.id); // Ou adicionar diretamente
+//   if (eventType === "UPDATE") store.fetchNotasAutoconhecimento(store.currentUser.id); // Ou atualizar diretamente
+//   if (eventType === "DELETE") store.fetchNotasAutoconhecimento(store.currentUser.id); // Ou remover diretamente
+// });
+

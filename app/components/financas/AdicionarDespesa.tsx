@@ -15,7 +15,7 @@ export function AdicionarDespesa() {
   // Inicializar categoria se estiver vazia
   useEffect(() => {
     if (!categoriaId && categorias.length > 0) {
-      setCategoriaId(categorias[0].id)
+      setCategoriaId(categorias[0].id ?? "")
     }
   }, [categorias, categoriaId])
   
@@ -26,13 +26,13 @@ export function AdicionarDespesa() {
     
     const hoje = new Date().toISOString().split('T')[0]
     
-    adicionarTransacao(
-      hoje,
-      parseFloat(valor),
-      descricao,
-      categoriaId,
-      'despesa'
-    )
+    adicionarTransacao({
+      data: hoje,
+      valor: parseFloat(valor),
+      descricao: descricao,
+      categoriaId: categoriaId,
+      tipo: 'despesa'
+    });
     
     // Mostrar feedback visual
     setMostrarFeedback(true)
@@ -104,7 +104,7 @@ export function AdicionarDespesa() {
                 <button
                   key={categoria.id}
                   type="button"
-                  onClick={() => setCategoriaId(categoria.id)}
+                  onClick={() => setCategoriaId(categoria.id ?? "")}
                   className={`h-14 p-2 rounded-md flex flex-col items-center justify-center text-xs ${
                     categoriaId === categoria.id
                       ? 'ring-2 ring-offset-2 ring-gray-500'

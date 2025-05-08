@@ -5,7 +5,7 @@ import { Rocket, CheckCircle, PlusCircle, X, Save } from 'lucide-react'
 import { useHiperfocosStore, CORES_HIPERFOCOS } from '../../stores/hiperfocosStore'
 
 export function ConversorInteresses() {
-  const { adicionarHiperfoco, adicionarTarefa } = useHiperfocosStore()
+  const { adicionarHiperfocoProjeto, adicionarHiperfocoTarefa } = useHiperfocosStore()
   
   const [formData, setFormData] = useState({
     titulo: '',
@@ -52,7 +52,7 @@ export function ConversorInteresses() {
   }
   
   // Função para lidar com o envio do formulário
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     
     // Validação
@@ -75,19 +75,22 @@ export function ConversorInteresses() {
     try {
       // Criar um novo hiperfoco
       const tempoLimiteInt = formData.tempoLimite ? parseInt(formData.tempoLimite) : undefined
-      const hiperfocoId = adicionarHiperfoco(
-        formData.titulo,
-        formData.descricao,
-        formData.corSelecionada,
-        tempoLimiteInt
-      )
+      const hiperfocoId = await adicionarHiperfocoProjeto({
+        titulo: formData.titulo,
+        descricao: formData.descricao,
+        cor: formData.corSelecionada,
+        tempoLimite: tempoLimiteInt
+      });
       
-      // Adicionar as tarefas ao hiperfoco
-      formData.novasTarefas
-        .filter(tarefa => tarefa.trim() !== '')
-        .forEach(tarefa => {
-          adicionarTarefa(hiperfocoId, tarefa)
-        })
+      if (hiperfocoId) {
+        for (const tarefaText of formData.novasTarefas.filter(t => t.trim() !== '')) {
+          await adicionarHiperfocoTarefa({
+            hiperfoco_id: hiperfocoId,
+            texto: tarefaText,
+            concluida: false
+          });
+        }
+      }
       
       // Feedback de sucesso
       setFeedback({

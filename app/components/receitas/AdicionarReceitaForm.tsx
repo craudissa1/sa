@@ -52,7 +52,7 @@ export function AdicionarReceitaForm({ receitaParaEditar, aoFinalizar }: Adicion
         tempoPreparo: String(receitaParaEditar.tempoPreparo || '30'),
         porcoes: String(receitaParaEditar.porcoes || '2'),
         calorias: String(receitaParaEditar.calorias || ''),
-        ingredientes: receitaParaEditar.ingredientes.map(ing => ({
+        ingredientes: (receitaParaEditar.ingredientes || []).map(ing => ({
             ...ing,
             quantidade: String(ing.quantidade) // Convert quantity to string for input
         })) || [{ nome: '', quantidade: '1', unidade: 'g' }],
@@ -119,18 +119,18 @@ export function AdicionarReceitaForm({ receitaParaEditar, aoFinalizar }: Adicion
 
   // --- Step Handlers ---
    const atualizarPasso = (index: number, valor: string) => {
-     const novosPassos = [...receita.passos];
+     const novosPassos = [...(receita.passos || [])];
      novosPassos[index] = valor;
      atualizarCampo('passos', novosPassos);
    };
 
    const adicionarPasso = () => {
-     atualizarCampo('passos', [...receita.passos, '']);
+     atualizarCampo('passos', [...(receita.passos || []), '']);
    };
 
    const removerPasso = (index: number) => {
-     if (receita.passos.length <= 1) return; // Keep at least one step row
-     const novosPassos = receita.passos.filter((_, i) => i !== index);
+     if ((receita.passos || []).length <= 1) return; // Keep at least one step row
+     const novosPassos = (receita.passos || []).filter((_, i) => i !== index);
      atualizarCampo('passos', novosPassos);
    };
 
@@ -161,7 +161,7 @@ export function AdicionarReceitaForm({ receitaParaEditar, aoFinalizar }: Adicion
     e.preventDefault(); // Prevent default form submission
 
     // Basic Validation
-    if (!receita.nome || receita.ingredientes.some(ing => !ing.nome.trim()) || receita.passos.some(p => !p.trim())) {
+    if (!receita.nome || receita.ingredientes.some(ing => !ing.nome.trim()) || (receita.passos || []).some(p => !p.trim())) {
       alert('Por favor, preencha o nome da receita, pelo menos um ingrediente e um passo do modo de preparo.');
       return;
     }
@@ -178,14 +178,14 @@ export function AdicionarReceitaForm({ receitaParaEditar, aoFinalizar }: Adicion
         quantidade: parseFloat(ing.quantidade.replace(',', '.')) || 0 // Handle comma decimal and parse
       })),
       // Ensure arrays are not empty strings
-      passos: receita.passos.filter(p => p.trim() !== ''),
+      passos: (receita.passos || []).filter(p => p.trim() !== ''),
       categorias: receita.categorias || [],
       tags: receita.tags || [],
     };
 
     try {
         if (editando) {
-          atualizarReceita(receitaParaSalvar);
+          atualizarReceita(receitaParaSalvar.id!, receitaParaSalvar);
           alert('Receita atualizada com sucesso!');
         } else {
           adicionarReceita(receitaParaSalvar);
@@ -302,7 +302,7 @@ export function AdicionarReceitaForm({ receitaParaEditar, aoFinalizar }: Adicion
              <label htmlFor="tags-input" className="block mb-2 font-medium text-sm">Tags</label> {/* Changed htmlFor to match input inside TagInput if needed, or remove if label clicks container */}
              <TagInput
                  // id="tags" removed - TagInput doesn't accept id prop directly
-                 tags={receita.tags}
+                 tags={receita.tags || []}
                  onChange={(tags) => atualizarCampo('tags', tags)}
                  suggestions={tagsSugeridas}
                 placeholder="Adicione tags (ex: Vegano, Rápido)"
@@ -401,7 +401,7 @@ export function AdicionarReceitaForm({ receitaParaEditar, aoFinalizar }: Adicion
            <Button type="button" onClick={adicionarPasso} size="sm" variant="outline">+ Adicionar Passo</Button>
          </div>
          <div className="space-y-4">
-           {receita.passos.map((passo, index) => (
+           {(receita.passos || []).map((passo, index) => (
              <div key={index} className="flex items-start gap-3">
                <span className="mt-2 font-semibold text-gray-500">{index + 1}.</span>
                <Textarea
@@ -419,7 +419,7 @@ export function AdicionarReceitaForm({ receitaParaEditar, aoFinalizar }: Adicion
                  variant="ghost"
                  size="sm"
                  className="text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 mt-1"
-                 disabled={receita.passos.length <= 1}
+                 disabled={(receita.passos || []).length <= 1}
                  aria-label={`Remover passo ${index + 1}`}
                >
                  Remover

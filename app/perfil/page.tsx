@@ -9,20 +9,27 @@ import { ExportarImportarDados } from '../components/ExportarImportarDados'
 import { RefreshCw, User } from 'lucide-react'
 
 export default function PerfilPage() {
-  const { resetarPerfil, preferenciasVisuais } = usePerfilStore()
+  const perfilStore = usePerfilStore()
+  const perfil = perfilStore.perfil || {
+    preferenciasVisuais: {
+      altoContraste: false,
+      reducaoEstimulos: false,
+      textoGrande: false
+    }
+  }
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
   
   // Aplicar classes de acessibilidade ao carregar a página
   useEffect(() => {
-    if (preferenciasVisuais.altoContraste) {
+    if (perfil.preferenciasVisuais.altoContraste) {
       document.documentElement.classList.add('alto-contraste')
     }
     
-    if (preferenciasVisuais.reducaoEstimulos) {
+    if (perfil.preferenciasVisuais.reducaoEstimulos) {
       document.documentElement.classList.add('reducao-estimulos')
     }
     
-    if (preferenciasVisuais.textoGrande) {
+    if (perfil.preferenciasVisuais.textoGrande) {
       document.documentElement.classList.add('texto-grande')
     }
     
@@ -30,10 +37,10 @@ export default function PerfilPage() {
     return () => {
       document.documentElement.classList.remove('alto-contraste', 'reducao-estimulos', 'texto-grande')
     }
-  }, [preferenciasVisuais])
+  }, [perfil.preferenciasVisuais])
   
   const confirmarReset = () => {
-    resetarPerfil()
+    perfilStore.resetarPerfilLocal()
     setResetConfirmOpen(false)
   }
 
