@@ -3,8 +3,8 @@ module.exports = {
   testEnvironment: 'jsdom',
   
   // Diretórios de teste
-  roots: ['<rootDir>/test'],
-  testMatch: ['**/*.test.js', '**/*.spec.js'],
+  roots: ['<rootDir>/app', '<rootDir>/test'], // Adicionado <rootDir>/app
+  testMatch: ['**/*.test.js', '**/*.spec.js', '**/*.test.tsx', '**/*.spec.tsx'], // Adicionado padrões .tsx
   
   // Configurações de cobertura
   collectCoverageFrom: [
