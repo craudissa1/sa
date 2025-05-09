@@ -1,9 +1,0 @@
-{
-  "taskId": "110#docs#documentar_divergencia_modulo_financas",
-  "status": "Done",
-  "output_references": [
-    "docs/divergencia_modulo_financas.md"
-  ],
-  "error_message": null,
-  "new_tasks_to_integrate": null
-}

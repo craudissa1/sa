@@ -1,9 +1,0 @@
-{
-  "taskId": "070#docs#documentar_divergencias_modulos_pessoais",
-  "status": "Done",
-  "summary": "Relatório de divergências dos módulos de Gerenciamento Pessoal (Alimentação, Autoconhecimento, Saúde, Sono, Lazer) em relação ao 'todo.md' foi gerado com sucesso.",
-  "output_references": [
-    ".state/reports/070#docs#documentar_divergencias_modulos_pessoais_report.md"
-  ],
-  "sub_tasks": []
-}

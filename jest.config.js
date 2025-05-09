@@ -24,7 +24,7 @@ module.exports = {
   },
   
   // Setup e transformações
-  setupFilesAfterEnv: ['<rootDir>/test/jest-setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/test/setup/jest-setup.js'],
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }]
   },
@@ -43,18 +43,7 @@ module.exports = {
   maxWorkers: '50%',
   
   // Relatórios
-  reporters: [
-    'default',
-    [
-      'jest-junit',
-      {
-        outputDirectory: 'coverage/junit',
-        outputName: 'junit.xml',
-        classNameTemplate: '{classname}',
-        titleTemplate: '{title}'
-      }
-    ]
-  ],
+  reporters: ['default'],
   
   // Configurações de ambiente
   globals: {

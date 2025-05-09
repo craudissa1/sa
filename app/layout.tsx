@@ -1,13 +1,14 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+// Removemos o import da fonte Inter do next/font/google para evitar conflitos com o Babel
 import { AuthProvider } from './context/AuthContext'
 import { Header } from '@/app/components/layout/Header'
 import { Footer } from '@/app/components/layout/Footer'
 import { Providers } from '@/app/providers'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
-const inter = Inter({ subsets: ['latin'] })
+// Definimos a classe diretamente, em vez de usar a fonte Inter do next/font
+// A fonte Inter será carregada via globals.css usando @import ou link no head
 
 export const metadata: Metadata = {
   title: 'Painel para Neurodivergentes',
@@ -30,7 +31,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className="font-sans">
         <AuthProvider>
           <Providers>
             <div className="flex h-screen overflow-hidden">
