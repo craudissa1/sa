@@ -2,8 +2,8 @@
 
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import { type ThemeProviderProps } from 'next-themes/dist/types';
-import { AuthProvider } from './context/AuthContext';
-import StoreInitializer from './components/utils/StoreInitializer'; // Import StoreInitializer
+import { AuthProvider } from './components/auth/AuthProvider';
+import StoreInitializer from './components/utils/StoreInitializer';
 
 export function Providers({ children, ...props }: ThemeProviderProps) {
   return (
@@ -15,7 +15,7 @@ export function Providers({ children, ...props }: ThemeProviderProps) {
       {...props}
     >
       <AuthProvider>
-        <StoreInitializer /> {/* Add StoreInitializer here */}
+        <StoreInitializer />
         <div suppressHydrationWarning>
           {children}
         </div>
