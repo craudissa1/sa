@@ -36,7 +36,7 @@ const SimuladoLoader: React.FC = () => {
   }, [concursos, selectedConcursoId]);
 
   // Função genérica para processar os dados JSON (seja de arquivo ou texto)
-  const processJsonData = (jsonData: string) => {
+  const processJsonData = useCallback((jsonData: string) => {
     try {
       const data: SimuladoData = JSON.parse(jsonData);
 
@@ -57,7 +57,7 @@ const SimuladoLoader: React.FC = () => {
       setIsLoading(false); // Garante que o loading pare em caso de erro
     }
     // O finally que estava aqui foi movido para os handlers específicos
-  };
+  }, [loadSimulado, setStatus]);
 
 
   const handleFileChange = useCallback(

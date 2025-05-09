@@ -107,14 +107,14 @@ export class DataMigrationService {
 
     // Extrair dados relevantes
     const perfil = {
-      user_id: this.userId,
-      nome: perfilState.perfil?.nome || 'Usuário',
-      preferenciasvisuais: {
+      id: this.userId,
+      nome_completo: perfilState.perfil?.nome_completo || 'Usuário',
+      preferenciasVisuais: {
         textoGrande: perfilState.perfil?.preferenciasVisuais?.textoGrande || false,
         altoContraste: perfilState.perfil?.preferenciasVisuais?.altoContraste || false,
         reducaoEstimulos: perfilState.perfil?.preferenciasVisuais?.reducaoEstimulos || false
       },
-      metasdiarias: {
+      metasDiarias: {
         horasSono: perfilState.perfil?.metasDiarias?.horasSono || 8,
         coposAgua: perfilState.perfil?.metasDiarias?.coposAgua || 8,
         pausasProgramadas: perfilState.perfil?.metasDiarias?.pausasProgramadas || 4,
@@ -124,7 +124,7 @@ export class DataMigrationService {
 
     // Inserir no Supabase
     const { error } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .insert(perfil);
 
     if (error) {

@@ -16,14 +16,24 @@ export type MetasDiarias = {
   pausasProgramadas: number;
 };
 
+// ATUALIZAÇÃO: Verifique se esta estrutura corresponde EXATAMENTE à tabela 'profiles' do schema SQL
 export type PerfilUsuario = {
-  id?: string; // user_id do Supabase Auth, será a PK
-  user_id?: string; // Redundante se id é o user_id, mas útil para clareza
-  nome: string;
-  preferenciasVisuais: PreferenciasVisuais; // JSONB no Supabase
-  metasDiarias: MetasDiarias; // JSONB no Supabase
-  notificacoesAtivas: boolean;
-  pausasAtivas: boolean;
+  id: string; // user_id do Supabase Auth, é a PK e FK para auth.users.id
+  // user_id?: string; // Removido para evitar redundância, 'id' já é o user_id
+  username?: string | null; // Adicionado do schema SQL, pode ser null
+  nome_completo?: string | null; // Alterado de 'nome' para 'nome_completo', pode ser null
+  data_nascimento?: string | null; // Tipo string para datas do Supabase (ISO 8601), pode ser null
+  genero?: string | null; // Pode ser null
+  idioma?: string | null; // Pode ser null
+  tema_visual?: string | null; // Pode ser null
+  meta_calorias_diarias?: number | null; // Pode ser null
+  meta_hidratacao_ml?: number | null; // Pode ser null
+  meta_tempo_estudo_minutos?: number | null; // Pode ser null
+  meta_tempo_lazer_minutos?: number | null; // Pode ser null
+  preferenciasVisuais?: PreferenciasVisuais | null; // Pode ser null, JSONB
+  metasDiarias?: MetasDiarias | null; // Pode ser null, JSONB
+  notificacoesAtivas?: boolean | null; // Pode ser null
+  pausasAtivas?: boolean | null; // Pode ser null
   created_at?: string;
   updated_at?: string;
 };
@@ -34,15 +44,28 @@ interface PerfilState {
 
   setCurrentUser: (user: User | null) => void;
   fetchPerfil: (userId: string) => Promise<void>;
-  updatePerfil: (updates: Partial<Omit<PerfilUsuario, "id" | "user_id" | "created_at" | "updated_at">>) => Promise<void>;
-  // Ações específicas como atualizarNome, etc., serão cobertas por updatePerfil
-  resetarPerfilLocal: () => void; // Reseta o estado local para o default, o DB terá o seu próprio default ou será criado na primeira vez
+  updatePerfil: (updates: Partial<Omit<PerfilUsuario, "id" | "created_at" | "updated_at">>) => Promise<void>;
+  resetarPerfilLocal: () => void;
 }
 
-const NOME_TABELA_PERFIS = "user_profiles";
+// ATUALIZAÇÃO: Nome da tabela alterado
+const NOME_TABELA_PERFIS = "profiles";
 
-const defaultLocalState: PerfilUsuario = {
-  nome: "Usuário",
+// ATUALIZAÇÃO: Estrutura do defaultLocalState para corresponder ao PerfilUsuario
+// Os campos que podem ser null no DB não precisam necessariamente estar no defaultLocalState
+// se a UI ou a lógica de criação souber lidar com a ausência inicial.
+// Mas para consistência, podemos definir valores padrão onde fizer sentido.
+const defaultLocalStateForCreation: Omit<PerfilUsuario, "id" | "created_at" | "updated_at"> = {
+  username: null,
+  nome_completo: "Usuário", // Mantido como 'Usuário' para nome
+  data_nascimento: null,
+  genero: null,
+  idioma: 'pt-BR',
+  tema_visual: 'system',
+  meta_calorias_diarias: null,
+  meta_hidratacao_ml: null,
+  meta_tempo_estudo_minutos: null,
+  meta_tempo_lazer_minutos: null,
   preferenciasVisuais: {
     altoContraste: false,
     reducaoEstimulos: false,
@@ -58,81 +81,110 @@ const defaultLocalState: PerfilUsuario = {
   pausasAtivas: true,
 };
 
+
 export const usePerfilStore = create<PerfilState>()((set, get) => ({
-  perfil: null, // Inicia como null até ser carregado
+  perfil: null,
   currentUser: null,
 
   setCurrentUser: (user) => set({ currentUser: user }),
 
   fetchPerfil: async (userId) => {
-    if (!userId) return;
+    if (!userId) {
+        console.warn("fetchPerfil chamado sem userId");
+        return;
+    }
     try {
+      // ATUALIZAÇÃO: A coluna de correspondência com auth.users.id na tabela 'profiles' é 'id'
       const { data, error } = await supabase
         .from(NOME_TABELA_PERFIS)
         .select("*")
-        .eq("user_id", userId) // Assumindo que user_id é a PK ou uma coluna única
+        .eq("id", userId) // A coluna 'id' na tabela 'profiles' é a FK para auth.users.id
         .single();
 
-      if (error && error.code !== "PGRST116") { // PGRST116: single row not found
-        console.error("Error fetching perfil:", error.message);
-        throw error;
+      if (error && error.code !== "PGRST116") {
+        console.error("Error fetching perfil:", error.message, error.details);
+        // Não lançar erro aqui para permitir fallback para criação
       }
 
       if (data) {
-        set({ perfil: data });
+        set({ perfil: data as PerfilUsuario });
       } else {
+        console.log(`Perfil não encontrado para user_id: ${userId}. Criando perfil padrão.`);
         // Perfil não encontrado, criar um com valores padrão
-        const perfilPadraoParaSalvar: Omit<PerfilUsuario, "id" | "created_at" | "updated_at"> = {
-          user_id: userId,
-          ...defaultLocalState,
+        // ATUALIZAÇÃO: O payload para insert deve ter 'id' como o userId
+        const perfilPadraoParaSalvar: Omit<PerfilUsuario, "created_at" | "updated_at"> = {
+          id: userId, // 'id' da tabela profiles é o user_id
+          ...defaultLocalStateForCreation, // Usar o default atualizado
         };
+        // Remover campos que não devem ser enviados no insert se forem opcionais e null
+        // (Supabase pode lidar com isso se a coluna permitir null e não tiver default)
+
         const { data: novoPerfil, error: insertError } = await supabase
           .from(NOME_TABELA_PERFIS)
           .insert(perfilPadraoParaSalvar)
           .select()
           .single();
+
         if (insertError) {
-          console.error("Error creating default perfil:", insertError.message);
-          set({ perfil: { ...defaultLocalState, user_id: userId } }); // Fallback para estado local padrão
-          throw insertError;
+          console.error("Error creating default perfil:", insertError.message, insertError.details);
+          // Fallback para estado local padrão em caso de falha na criação
+          set({ perfil: { id: userId, ...defaultLocalStateForCreation } as PerfilUsuario });
+          // Não lançar erro aqui para a UI poder usar o fallback
+          return;
         }
-        set({ perfil: novoPerfil });
+        set({ perfil: novoPerfil as PerfilUsuario });
       }
-    } catch (error) {
-      console.error("Error in fetchPerfil or creating default:", error);
+    } catch (error: any) {
+      console.error("Catch geral em fetchPerfil ou creating default:", error.message);
       // Em caso de erro grave, pode-se setar um perfil local padrão para a UI não quebrar
-      set({ perfil: { ...defaultLocalState, user_id: userId } });
+      set({ perfil: { id: userId, ...defaultLocalStateForCreation } as PerfilUsuario });
     }
   },
 
   updatePerfil: async (updates) => {
     const user = get().currentUser;
     const currentPerfil = get().perfil;
-    if (!user || !currentPerfil) throw new Error("User or perfil not available for update");
 
-    // Assegurar que o user_id não seja sobrescrito se estiver no updates, e que ele exista.
-    const payload = { ...updates, user_id: currentPerfil.user_id || user.id };
-    // A operação delete foi removida pois a propriedade 'id' não existe no tipo de payload
-    // e está causando erro de tipagem
+    if (!user || !currentPerfil || !currentPerfil.id) {
+        console.error("User ou perfil (ou perfil.id) não disponível para updatePerfil.");
+        throw new Error("User or perfil not available for update");
+    }
+    
+    // ATUALIZAÇÃO: O payload não deve conter 'id', pois é a chave primária e não deve ser alterada.
+    // O user.id ou currentPerfil.id será usado na cláusula .eq()
+    const payload = { ...updates }; 
+    // delete payload.id; // Garantir que 'id' não está no payload de update
 
     const { data, error } = await supabase
       .from(NOME_TABELA_PERFIS)
       .update(payload)
-      .eq("user_id", currentPerfil.user_id || user.id) // Condição de atualização
+      .eq("id", currentPerfil.id) // Condição de atualização é na coluna 'id'
       .select()
       .single();
 
     if (error) {
-      console.error("Error updating perfil:", error.message);
+      console.error("Error updating perfil:", error.message, error.details);
       // Tentar inserir se a atualização falhou por não existir (upsert manual)
+      // PGRST116 significa "0 rows in result" para single()
       if (error.code === "PGRST116" || (error.details && error.details.includes("0 rows"))) {
-        const perfilParaSalvar: Omit<PerfilUsuario, "id" | "created_at" | "updated_at"> = {
-            user_id: user.id,
-            nome: updates.nome || defaultLocalState.nome,
-            preferenciasVisuais: updates.preferenciasVisuais || defaultLocalState.preferenciasVisuais,
-            metasDiarias: updates.metasDiarias || defaultLocalState.metasDiarias,
-            notificacoesAtivas: typeof updates.notificacoesAtivas === "boolean" ? updates.notificacoesAtivas : defaultLocalState.notificacoesAtivas,
-            pausasAtivas: typeof updates.pausasAtivas === "boolean" ? updates.pausasAtivas : defaultLocalState.pausasAtivas,
+        console.log("Perfil não encontrado para update, tentando inserir como novo (upsert manual)...");
+        // ATUALIZAÇÃO: payload para insert
+        const perfilParaSalvar: Omit<PerfilUsuario, "created_at" | "updated_at"> = {
+            id: currentPerfil.id, // 'id' da tabela profiles é o user_id
+            username: updates.username !== undefined ? updates.username : defaultLocalStateForCreation.username,
+            nome_completo: updates.nome_completo !== undefined ? updates.nome_completo : defaultLocalStateForCreation.nome_completo,
+            data_nascimento: updates.data_nascimento !== undefined ? updates.data_nascimento : defaultLocalStateForCreation.data_nascimento,
+            genero: updates.genero !== undefined ? updates.genero : defaultLocalStateForCreation.genero,
+            idioma: updates.idioma !== undefined ? updates.idioma : defaultLocalStateForCreation.idioma,
+            tema_visual: updates.tema_visual !== undefined ? updates.tema_visual : defaultLocalStateForCreation.tema_visual,
+            meta_calorias_diarias: updates.meta_calorias_diarias !== undefined ? updates.meta_calorias_diarias : defaultLocalStateForCreation.meta_calorias_diarias,
+            meta_hidratacao_ml: updates.meta_hidratacao_ml !== undefined ? updates.meta_hidratacao_ml : defaultLocalStateForCreation.meta_hidratacao_ml,
+            meta_tempo_estudo_minutos: updates.meta_tempo_estudo_minutos !== undefined ? updates.meta_tempo_estudo_minutos : defaultLocalStateForCreation.meta_tempo_estudo_minutos,
+            meta_tempo_lazer_minutos: updates.meta_tempo_lazer_minutos !== undefined ? updates.meta_tempo_lazer_minutos : defaultLocalStateForCreation.meta_tempo_lazer_minutos,
+            preferenciasVisuais: updates.preferenciasVisuais !== undefined ? updates.preferenciasVisuais : defaultLocalStateForCreation.preferenciasVisuais,
+            metasDiarias: updates.metasDiarias !== undefined ? updates.metasDiarias : defaultLocalStateForCreation.metasDiarias,
+            notificacoesAtivas: typeof updates.notificacoesAtivas === "boolean" ? updates.notificacoesAtivas : defaultLocalStateForCreation.notificacoesAtivas,
+            pausasAtivas: typeof updates.pausasAtivas === "boolean" ? updates.pausasAtivas : defaultLocalStateForCreation.pausasAtivas,
         };
         const { data: novoPerfil, error: insertError } = await supabase
             .from(NOME_TABELA_PERFIS)
@@ -140,23 +192,23 @@ export const usePerfilStore = create<PerfilState>()((set, get) => ({
             .select()
             .single();
         if (insertError) {
-            console.error("Error inserting perfil after failed update:", insertError.message);
-            throw insertError;
+            console.error("Error inserting perfil after failed update:", insertError.message, insertError.details);
+            throw insertError; // Relançar o erro de inserção se falhar
         }
-        set({ perfil: novoPerfil });
+        set({ perfil: novoPerfil as PerfilUsuario });
         return;
       }
-      throw error;
+      throw error; // Relançar outros erros de atualização
     }
-    if (data) set({ perfil: data });
+    if (data) set({ perfil: data as PerfilUsuario });
   },
 
   resetarPerfilLocal: () => {
     const user = get().currentUser;
-    // Esta função apenas reseta o estado local. Para resetar no DB, seria uma chamada `updatePerfil` com os defaults.
-    set({ perfil: user ? { ...defaultLocalState, user_id: user.id } : null });
+    // ATUALIZAÇÃO: o perfil resetado deve ter `id` como user.id
+    set({ perfil: user ? { id: user.id, ...defaultLocalStateForCreation } as PerfilUsuario : null });
     // Para efetivamente resetar no banco, você chamaria:
-    // if (user) get().updatePerfil(defaultLocalState);
+    // if (user) get().updatePerfil(defaultLocalStateForCreation); // Passar o objeto completo
   },
 }));
 
@@ -166,10 +218,9 @@ export const usePerfilStore = create<PerfilState>()((set, get) => ({
 // setupSubscription(NOME_TABELA_PERFIS, (payload) => {
 //   const { eventType, new: newRecord, old: oldRecord, table } = payload;
 //   const store = usePerfilStore.getState();
-//   if (store.currentUser && newRecord.user_id === store.currentUser.id) {
+//   if (store.currentUser && newRecord.id === store.currentUser.id) { // ATUALIZAÇÃO: Checar newRecord.id
 //     if (eventType === "INSERT" || eventType === "UPDATE") {
-//       store.fetchPerfil(store.currentUser.id); // Ou setar diretamente: set({ perfil: newRecord as PerfilUsuario })
+//       store.fetchPerfil(store.currentUser.id); 
 //     }
 //   }
 // });
-

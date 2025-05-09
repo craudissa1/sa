@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAppStore, BlocoTempo } from "@/app/store"; // Ajustado para useAppStore
-import { usePerfilStore } from "@/app/stores/perfilStore"; // Mantido, pois é uma store de perfil válida
+import { usePerfilStore, PerfilUsuario, PreferenciasVisuais as TipoPreferenciasVisuais } from "@/app/stores/perfilStore"; // Adicionado PerfilUsuario e TipoPreferenciasVisuais
 import { useAuth } from "@/app/context/AuthContext"; // Para obter o usuário atual
 import { Prioridade, usePrioridadesStore } from "@/app/stores/prioridadesStore"; // Importando de prioridadesStore
 
@@ -15,12 +15,8 @@ export type DashboardData = {
   metasPausas: number;
   mostrarPausas: boolean;
   metasPrioridades: number;
-  nomeUsuario: string;
-  preferenciasVisuais: {
-    altoContraste: boolean;
-    reducaoEstimulos: boolean;
-    textoGrande: boolean;
-  };
+  nomeUsuario: string; // Mantido como string, o fallback garante isso
+  preferenciasVisuais: TipoPreferenciasVisuais; // Usar o tipo importado
   isLoading: boolean;
 };
 
@@ -30,9 +26,9 @@ const defaultDashboardData: DashboardData = {
   proximosCompromissos: [],
   prioridadesPendentes: 0,
   prioridadesConcluidas: 0,
-  metasPausas: 4, // Valor padrão
+  metasPausas: 4,
   mostrarPausas: true,
-  metasPrioridades: 3, // Valor padrão
+  metasPrioridades: 3,
   nomeUsuario: "Usuário",
   preferenciasVisuais: {
     altoContraste: false,
@@ -44,34 +40,29 @@ const defaultDashboardData: DashboardData = {
 
 export const useDashboard = () => {
   const [data, setData] = useState<DashboardData>(defaultDashboardData);
-  const { user } = useAuth(); // Usando o contexto de autenticação
+  const { user } = useAuth();
 
-  // Hooks para accese às stores
   const { blocosTempo } = useAppStore();
-  const { perfil } = usePerfilStore();
+  const { perfil }: { perfil: PerfilUsuario | null } = usePerfilStore(); // Tipagem explícita para perfil
   const { prioridades } = usePrioridadesStore();
 
   useEffect(() => {
-    // Executar apenas se o usuário estiver autenticado
     if (!user) {
-      setData((prev) => ({ ...prev, isLoading: false }));
+      setData((prev) => ({ ...prev, isLoading: false, nomeUsuario: "Usuário" })); // Garante nomeUsuario no logout
       return;
     }
 
-    // Dados do dia atual
-    const hoje = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    setData((prev) => ({ ...prev, isLoading: true })); // Define isLoading como true no início do processamento
 
-    // Filtrar blocos de tempo para o dia de hoje
+    const hoje = new Date().toISOString().split('T')[0];
+
     const blocosDia = blocosTempo.filter((bloco) => bloco.data === hoje);
 
-    // Prioridades do dia
     const prioridadesDia = prioridades.filter((p: Prioridade) => p.data === hoje);
     
-    // Estatísticas de prioridades
     const prioridadesPendentes = prioridadesDia.filter((p: Prioridade) => !p.concluida).length;
     const prioridadesConcluidas = prioridadesDia.filter((p: Prioridade) => p.concluida).length;
 
-    // Próximos compromissos (ordenados por hora)
     const agora = new Date();
     const horaAtual = agora.getHours();
     const minutoAtual = agora.getMinutes();
@@ -86,22 +77,18 @@ export const useDashboard = () => {
         const [horaB, minutoB] = b.hora.split(':').map(Number);
         return horaA - horaB || minutoA - minutoB;
       })
-      .slice(0, 3); // Apenas os próximos 3
+      .slice(0, 3);
 
-    // Dados de perfil do usuário (se disponível)
-    const metasPausas = perfil?.metasDiarias?.pausasProgramadas || 4;
-    const metasPrioridades = perfil?.metasDiarias?.tarefasPrioritarias || 3;
-    const nomeUsuario = perfil?.nome || "Usuário";
-    const mostrarPausas = perfil?.pausasAtivas !== undefined ? perfil.pausasAtivas : true;
+    // ATUALIZAÇÃO: Usar 'nome_completo' em vez de 'nome'
+    const nomeUsuario = perfil?.nome_completo || "Usuário";
     
-    // Preferências visuais
-    const preferenciasVisuais = perfil?.preferenciasVisuais || {
-      altoContraste: false,
-      reducaoEstimulos: false,
-      textoGrande: false,
-    };
+    // Valores default seguros para metas e preferências, mesmo que perfil ou suas subpropriedades sejam null
+    const metasPausas = perfil?.metasDiarias?.pausasProgramadas ?? defaultDashboardData.metasPausas;
+    const metasPrioridades = perfil?.metasDiarias?.tarefasPrioritarias ?? defaultDashboardData.metasPrioridades;
+    const mostrarPausas = perfil?.pausasAtivas ?? defaultDashboardData.mostrarPausas;
+    
+    const preferenciasVisuais = perfil?.preferenciasVisuais || defaultDashboardData.preferenciasVisuais;
 
-    // Atualizar o estado
     setData({
       blocosDia,
       prioridadesDia,

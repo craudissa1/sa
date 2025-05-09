@@ -1,0 +1,1 @@
+{"version":3,"names":["global","fetch","require"],"sources":["jest-setup.js"],"sourcesContent":["// __tests__/setup/jest-setup.js\nglobal.fetch = require('node-fetch');"],"mappings":"AAAA;AACAA,MAAM,CAACC,KAAK,GAAGC,OAAO,CAAC,YAAY,CAAC","ignoreList":[]}

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
@@ -14,6 +14,7 @@ type AuthContextType = {
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any | null; success: boolean }>;
   signUp: (email: string, password: string) => Promise<{ error: any | null; success: boolean }>;
+  signInWithGoogle: () => Promise<{ error: any | null; success: boolean }>;
   signOut: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<{ error: any | null; success: boolean }>;
   updatePassword: (newPassword: string) => Promise<{ error: any | null; success: boolean }>;
@@ -29,6 +30,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isMigrating, setIsMigrating] = useState(false);
   const router = useRouter();
+
+  // Função para migrar os dados do localStorage para o Supabase
+  const handleDataMigration = useCallback(async (user: User) => {
+    if (isMigrating) return;
+    setIsMigrating(true);
+
+    try {
+      console.log('Verificando migração de dados para o usuário:', user.id);
+      dataMigrationService.setUserId(user.id);
+      
+      // Verificar se o usuário já tem dados no Supabase
+      const jaTemDados = await dataMigrationService.usuarioTemDadosNoSupabase();
+      
+      if (!jaTemDados) {
+        console.log('Iniciando migração de dados para o Supabase...');
+        
+        // Iniciar a migração de dados
+        const migrouComSucesso = await dataMigrationService.migrarTodosDados();
+        
+        if (migrouComSucesso) {
+          console.log('Dados migrados com sucesso para o Supabase!');
+          
+          // Atualizar componente UI com feedback
+          // Você pode adicionar um toast ou notificação aqui
+        } else {
+          console.error('Erro ao migrar dados para o Supabase');
+          
+          // Atualizar componente UI com feedback de erro
+          // Você pode adicionar um toast ou notificação aqui
+        }
+      } else {
+        console.log('Usuário já possui dados no Supabase.');
+      }
+      
+      // Iniciar o serviço de sincronização com o usuário atual
+      supabaseSync.setUser(user);
+    } catch (error) {
+      console.error('Erro durante a migração de dados:', error);
+    } finally {
+      setIsMigrating(false);
+    }
+  }, [isMigrating]);
 
   // Verificar se o usuário está autenticado
   useEffect(() => {
@@ -84,49 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initAuth();
-  }, [router]);
-
-  // Função para migrar os dados do localStorage para o Supabase
-  const handleDataMigration = async (user: User) => {
-    if (isMigrating) return;
-    setIsMigrating(true);
-
-    try {
-      console.log('Verificando migração de dados para o usuário:', user.id);
-      dataMigrationService.setUserId(user.id);
-      
-      // Verificar se o usuário já tem dados no Supabase
-      const jaTemDados = await dataMigrationService.usuarioTemDadosNoSupabase();
-      
-      if (!jaTemDados) {
-        console.log('Iniciando migração de dados para o Supabase...');
-        
-        // Iniciar a migração de dados
-        const migrouComSucesso = await dataMigrationService.migrarTodosDados();
-        
-        if (migrouComSucesso) {
-          console.log('Dados migrados com sucesso para o Supabase!');
-          
-          // Atualizar componente UI com feedback
-          // Você pode adicionar um toast ou notificação aqui
-        } else {
-          console.error('Erro ao migrar dados para o Supabase');
-          
-          // Atualizar componente UI com feedback de erro
-          // Você pode adicionar um toast ou notificação aqui
-        }
-      } else {
-        console.log('Usuário já possui dados no Supabase.');
-      }
-      
-      // Iniciar o serviço de sincronização com o usuário atual
-      supabaseSync.setUser(user);
-    } catch (error) {
-      console.error('Erro durante a migração de dados:', error);
-    } finally {
-      setIsMigrating(false);
-    }
-  };
+  }, [router, handleDataMigration, isMigrating]);
 
   // Função para fazer login
   const signIn = async (email: string, password: string) => {
@@ -204,6 +205,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Função para login com Google
+  const signInWithGoogle = async () => {
+    try {
+      // Importante: mantemos /auth/callback como caminho de callback para o Supabase
+      // pois a lógica de processamento do token está no route.ts desse caminho
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: process.env.NEXT_PUBLIC_GOOGLE_AUTH_REDIRECT || `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      });
+
+      if (error) {
+        return { error, success: false };
+      }
+
+      return { error: null, success: true };
+    } catch (error) {
+      return { error, success: false };
+    }
+  };
+
   // Valor do contexto
   const value = {
     user,
@@ -211,12 +238,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
     requestPasswordReset,
     updatePassword,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 // Hook para usar o contexto de autenticação

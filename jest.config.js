@@ -3,8 +3,8 @@ module.exports = {
   testEnvironment: 'jsdom',
   
   // Diretórios de teste
-  roots: ['<rootDir>/test'],
-  testMatch: ['**/*.test.js', '**/*.spec.js'],
+  roots: ['<rootDir>/e2e', '<rootDir>/testes'],
+  testMatch: ['**/*.test.js', '**/*.spec.js', '**/*.test.ts', '**/*.spec.ts', '**/*.test.tsx', '**/*.spec.tsx'],
   
   // Configurações de cobertura
   collectCoverageFrom: [
@@ -24,7 +24,7 @@ module.exports = {
   },
   
   // Setup e transformações
-  setupFilesAfterEnv: ['<rootDir>/test/setup/jest-setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/__tests__/setup/jest-setup.js'],
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }]
   },
@@ -34,7 +34,7 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/app/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$':
-      '<rootDir>/test/mocks/fileMock.js'
+      '<rootDir>/__tests__/mocks/fileMock.js'
   },
   
   // Configurações adicionais

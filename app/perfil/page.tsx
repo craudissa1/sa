@@ -21,15 +21,15 @@ export default function PerfilPage() {
   
   // Aplicar classes de acessibilidade ao carregar a página
   useEffect(() => {
-    if (perfil.preferenciasVisuais.altoContraste) {
+    if (perfil?.preferenciasVisuais?.altoContraste) {
       document.documentElement.classList.add('alto-contraste')
     }
     
-    if (perfil.preferenciasVisuais.reducaoEstimulos) {
+    if (perfil?.preferenciasVisuais?.reducaoEstimulos) {
       document.documentElement.classList.add('reducao-estimulos')
     }
     
-    if (perfil.preferenciasVisuais.textoGrande) {
+    if (perfil?.preferenciasVisuais?.textoGrande) {
       document.documentElement.classList.add('texto-grande')
     }
     

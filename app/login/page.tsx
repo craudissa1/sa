@@ -1,8 +1,10 @@
+// 'use client'; // Opcional aqui, depende se LoginForm é client component
+
 import { Metadata } from 'next';
-import LoginForm from '../components/auth/LoginForm';
+import LoginForm from '../components/auth/LoginForm'; // Mantenha o caminho correto
 
 export const metadata: Metadata = {
-  title: 'Login | Painel Neurodivergentes',
+  title: 'Login | Painel Neurodivergentes', // Pode manter ou ajustar se o nome do app mudou
   description: 'Acesse sua conta para gerenciar seu painel personalizado',
 };
 
@@ -18,11 +20,11 @@ export default function LoginPage() {
             Acesse sua conta para continuar sua jornada
           </p>
         </div>
-        
+
         <div className="mt-8 bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <LoginForm />
         </div>
       </div>
     </div>
   );
-} 
+}

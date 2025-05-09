@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react"; // Adicionado useEffect
+import React, { useState, useEffect, useMemo } from "react"; // Adicionado useEffect e useMemo
 import { Button } from "@/app/components/ui/Button";
 import { Input } from "@/app/components/ui/Input";
 import { Modal } from "@/app/components/ui/Modal";
@@ -18,7 +18,7 @@ export function ConcursoForm({ isOpen, onClose, concursoParaEditar }: ConcursoFo
   const { user } = useAuth();
   const { adicionarConcurso, atualizarConcurso, fetchConcursos } = useConcursosStore();
   
-  const initialState = {
+  const initialState = useMemo(() => ({
     titulo: "",
     organizadora: "",
     dataInscricao: "",
@@ -27,7 +27,7 @@ export function ConcursoForm({ isOpen, onClose, concursoParaEditar }: ConcursoFo
     status: "planejado" as Concurso["status"],
     conteudoProgramatico: [] as ConteudoProgramatico[],
     user_id: user?.id || undefined
-  };
+  }), [user?.id]);
 
   const [formData, setFormData] = useState<Omit<Concurso, "id" | "created_at" | "updated_at">>(initialState);
   const [novaDisciplina, setNovaDisciplina] = useState("");

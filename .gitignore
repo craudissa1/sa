@@ -39,3 +39,6 @@ next-env.d.ts
 # credenciais e segredos
 client_secret*.json
 *googleusercontent*.json
+
+# Local Netlify folder
+.netlify
