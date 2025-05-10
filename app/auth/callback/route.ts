@@ -44,7 +44,23 @@ export async function GET(request: NextRequest) {
   }
   
   // Redirecionar para o dashboard após login bem-sucedido
-  return NextResponse.redirect(new URL('/dashboard', request.url));
+  // Extrair o domínio principal do Netlify, ignorando prefixos de deploy
+  // Usamos a URL já criada no início da função
+  const hostname = requestUrl.hostname;
+  
+  // Se estiver em um domínio do Netlify com ID de deploy (contendo --)
+  let baseUrl;
+  if (hostname.includes('--')) {
+    // Extrair o domínio principal após o '--'
+    const mainDomain = hostname.split('--')[1];
+    baseUrl = `${requestUrl.protocol}//${mainDomain}`;
+  } else {
+    // Usar a URL atual se não tiver o formato de preview do Netlify
+    baseUrl = `${requestUrl.protocol}//${hostname}`;
+  }
+  
+  // Criar URL de redirecionamento usando o domínio base correto
+  return NextResponse.redirect(`${baseUrl}/dashboard`);
 }
 
 export const dynamic = 'force-dynamic';
