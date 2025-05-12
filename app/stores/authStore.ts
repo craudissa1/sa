@@ -32,7 +32,6 @@ interface AuthState {
   handleDataMigration: (user: User) => Promise<void>;
   
   // Gerenciamento de sessão
-  updateServerSession: (event: string, session: Session) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -250,20 +249,6 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       
-      // Atualização de sessão no servidor
-      updateServerSession: async (event, session) => {
-        try {
-          await fetch('/api/auth/update-session', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ event, session }),
-          });
-        } catch (error) {
-          console.error('Erro ao atualizar sessão no servidor:', error);
-        }
-      }
     }),
     {
       name: 'auth-store',

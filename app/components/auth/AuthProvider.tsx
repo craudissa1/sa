@@ -15,7 +15,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Inicializar autenticação e configurar listeners
   useEffect(() => {
-    const { setSession, setUser, setIsLoading, handleDataMigration, updateServerSession } = useAuthStore.getState();
+    const { setSession, setUser, setIsLoading, handleDataMigration } = useAuthStore.getState();
     setIsLoading(true); // Inicia como carregando
 
     let initialSessionChecked = false;
@@ -75,30 +75,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false); // Forçar isLoading para false imediatamente
         console.log("AuthProvider: Login detectado, forçando isLoading = false");
         
-        if (session) {
-          await updateServerSession(event, session);
+        } else {
+          // Para outros eventos, seguir o fluxo normal
+          setSession(session);
+          setUser(session?.user ?? null);
         }
-      } else {
-        // Para outros eventos, seguir o fluxo normal
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session) {
-          await updateServerSession(event, session);
+
+        // Se for o primeiro evento de autenticação processamos e consideramos para finalizar o loading
+        if (!authListenerProcessedFirstEvent) {
+          authListenerProcessedFirstEvent = true;
+          checkLoadingDone(); // Verifica se pode parar o loading
         }
-      }
 
-      // Se for o primeiro evento de autenticação processamos e consideramos para finalizar o loading
-      if (!authListenerProcessedFirstEvent) {
-        authListenerProcessedFirstEvent = true;
-        checkLoadingDone(); // Verifica se pode parar o loading
-      }
-
-      // Redirecionar para login quando o usuário faz logout
-      if (event === 'SIGNED_OUT') {
-        router.push('/login');
-      }
-    });
+        // Redirecionar para login quando o usuário faz logout
+        if (event === 'SIGNED_OUT') {
+          router.push('/login');
+        }
+      });
 
     // Limpar o ouvinte ao desmontar o componente
     return () => {

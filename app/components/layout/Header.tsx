@@ -13,7 +13,6 @@ export function Header() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const [isReady, setIsReady] = useState(false)
   const { user, signOut, isLoading } = useAuth()
   const router = useRouter()
   
@@ -22,14 +21,6 @@ export function Header() {
     setMounted(true)
   }, [])
 
-  // Efeito para garantir que a UI esteja sincronizada com o estado de autenticação
-  useEffect(() => {
-    if (!isLoading) {
-      // Pequeno delay para garantir que o estado está estabilizado
-      const timer = setTimeout(() => setIsReady(true), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading, user])
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
@@ -46,7 +37,7 @@ export function Header() {
   }
 
   // Renderizar uma versão simplificada durante o carregamento
-  if (isLoading || !isReady) {
+  if (isLoading) {
     return (
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="flex items-center justify-between h-16 px-4">

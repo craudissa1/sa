@@ -1,7 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 // Removemos o import da fonte Inter do next/font/google para evitar conflitos com o Babel
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider } from './components/auth/AuthProvider'
 import { Header } from '@/app/components/layout/Header'
 import { Footer } from '@/app/components/layout/Footer'
 import { Providers } from '@/app/providers'

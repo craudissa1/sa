@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuthStore } from "../../stores/authStore";
 import { useAppStore } from "../../store";
 import { supabaseRealtime } from "../../lib/supabaseRealtime";
 import { supabaseSync } from "../../lib/supabaseSync";
@@ -9,8 +9,7 @@ import { useFinancasStore } from "../../stores/financasStore";
 // Importar outras stores conforme necessário
 
 const StoreInitializer = () => {
-  const { user, loading } = useAuth(); // loading equivale a isAuthLoading
-  const session = useAuth().session;
+  const { user, isLoading, session } = useAuthStore();
   
   // Funções e estados do App Store
   const setCurrentUser = useAppStore((state) => state.setCurrentUser);
@@ -23,7 +22,7 @@ const StoreInitializer = () => {
 
   // Gerenciar usuário atual e carregar dados iniciais
   useEffect(() => {
-    console.log("StoreInitializer Effect: user:", user?.id, "loading:", loading);
+    console.log("StoreInitializer Effect: user:", user?.id, "isLoading:", isLoading);
     
     // Primeiro sincronizar o currentUser nas stores individuais
     if (user !== useFinancasStore.getState().currentUser) {
@@ -31,7 +30,7 @@ const StoreInitializer = () => {
     }
     
     // Só busca dados se o usuário existir E a autenticação não estiver carregando
-    if (user && !loading) {
+    if (user && !isLoading) {
       console.log("StoreInitializer: Autenticação pronta. Buscando dados das stores...", user.id);
       setCurrentUser(user);
       
@@ -46,7 +45,7 @@ const StoreInitializer = () => {
         supabaseSync.setUser(user);
       }, 100); // Pequeno atraso para garantir propagação do token
       
-    } else if (!loading && !session) {
+    } else if (!isLoading && !session) {
       console.log("StoreInitializer: Sem usuário e autenticação finalizada. Limpando stores.");
       setCurrentUser(null);
       setCurrentUserFinancas(null);
@@ -72,12 +71,12 @@ const StoreInitializer = () => {
         currentUser: null
       });
     }
-  }, [user, session, loading, setCurrentUser, fetchInitialData, fetchConfiguracao, fetchFinancasData, setCurrentUserFinancas]);
+  }, [user, session, isLoading, setCurrentUser, fetchInitialData, fetchConfiguracao, fetchFinancasData, setCurrentUserFinancas]);
 
   // Gerenciar subscrições em tempo real
   useEffect(() => {
     // Só inicializar subscrições quando user existir E autenticação estiver pronta
-    if (user && !loading) {
+    if (user && !isLoading) {
       console.log("StoreInitializer: Inicializando subscrições em tempo real para o usuário", user.id);
       supabaseRealtime.initialize(user);
     }
@@ -87,17 +86,17 @@ const StoreInitializer = () => {
       console.log("StoreInitializer: Limpando subscrições em tempo real.");
       supabaseRealtime.cleanupSubscriptions();
     };
-  }, [user, loading]);
+  }, [user, isLoading]);
 
   // Monitorar estado da conexão
   useEffect(() => {
     const handleOnline = () => {
       console.log("StoreInitializer: Conexão online detectada.");
       
-      // Tentar sincronizar dados pendentes apenas se usuário estiver autenticado E loading for false
-      if (user && !loading) {
+      // Tentar sincronizar dados pendentes apenas se usuário estiver autenticado E isLoading for false
+      if (user && !isLoading) {
         console.log("StoreInitializer: Tentando sincronizar dados pendentes...");
-        supabaseSync.forceSyncAll().catch(err => 
+        supabaseSync.forceSyncAll().catch(err =>
           console.error("Erro ao sincronizar dados pendentes:", err)
         );
       }
@@ -114,7 +113,7 @@ const StoreInitializer = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [user, loading]);
+  }, [user, isLoading]);
 
   // Inicializar o estado da aplicação apenas no lado do cliente - primeira renderização
   useEffect(() => {
