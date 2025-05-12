@@ -13,6 +13,7 @@ export function Header() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [isReady, setIsReady] = useState(false)
   const { user, signOut, isLoading } = useAuth()
   const router = useRouter()
   
@@ -20,6 +21,15 @@ export function Header() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Efeito para garantir que a UI esteja sincronizada com o estado de autenticação
+  useEffect(() => {
+    if (!isLoading) {
+      // Pequeno delay para garantir que o estado está estabilizado
+      const timer = setTimeout(() => setIsReady(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, user])
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
@@ -33,6 +43,42 @@ export function Header() {
   // Função para fechar o sidebar
   const closeSidebar = () => {
     setSidebarOpen(false)
+  }
+
+  // Renderizar uma versão simplificada durante o carregamento
+  if (isLoading || !isReady) {
+    return (
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="flex items-center justify-between h-16 px-4">
+          <div className="flex items-center">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-500"
+              aria-label="Menu carregando"
+              disabled
+            >
+              <Menu className="h-6 w-6" aria-hidden="true" />
+            </button>
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="animate-pulse h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            {mounted && (
+              <button
+                className="p-2 rounded-full text-gray-500"
+                aria-label="Tema"
+                disabled
+              >
+                {theme === 'dark' ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+    );
   }
 
   return (

@@ -1,3 +1,5 @@
+'use client';
+
 import { create } from 'zustand';
 import { supabase } from '../lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
@@ -78,7 +80,7 @@ export const useReceitasStore = create<ReceitasState>()((set, get) => ({
 
       set({
         receitas: receitasData || [],
-        favoritos: favoritosData?.map(f => f.recipe_id) || []
+        favoritos: favoritosData?.map((f: { recipe_id: string }) => f.recipe_id) || []
       });
     } catch (error) {
       console.error("Error fetching receitas data:", error);

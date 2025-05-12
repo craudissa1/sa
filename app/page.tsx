@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { PlusCircle } from 'lucide-react'
+import { PlusCircle, LogIn, UserPlus, ChevronRight, Activity, Brain, Clock, Target } from 'lucide-react'
 import { DashboardCard } from '@/app/components/ui/DashboardCard'
 import { DashboardSection } from '@/app/components/ui/DashboardSection'
 import { DashboardHeader } from '@/app/components/ui/DashboardHeader'
@@ -16,6 +16,7 @@ import { LembretePausas } from '@/app/components/inicio/LembretePausas'
 import { ChecklistMedicamentos } from '@/app/components/inicio/ChecklistMedicamentos'
 import { ProximaProvaCard } from '@/app/components/inicio/ProximaProvaCard'
 import { useDashboard } from '@/app/hooks/useDashboard'
+import { useAuthStore } from '@/app/stores/authStore'
 import { cn } from '@/app/lib/utils'
 
 // Componentes de placeholder para Suspense
@@ -44,6 +45,11 @@ const ProximaProvaPlaceholder = () => (
 )
 
 export default function HomePage() {
+  // Estado de autenticação do usuário
+  const user = useAuthStore(state => state.user)
+  const isAuthLoading = useAuthStore(state => state.isLoading)
+  const [userName, setUserName] = useState('')
+  
   // Usar o hook personalizado para carregar os dados do dashboard
   const {
     blocosDia,
@@ -58,6 +64,17 @@ export default function HomePage() {
     isLoading
   } = useDashboard()
 
+  // Extrair nome do usuário para personalização
+  useEffect(() => {
+    if (user) {
+      // Priorizar nome do metadata, depois nome do email, depois email completo
+      const fullName = user.user_metadata?.full_name
+      const emailName = user.email?.split('@')[0]
+      
+      setUserName(fullName || emailName || user.email || '')
+    }
+  }, [user])
+  
   // Aplicar preferências visuais se estiverem definidas
   useEffect(() => {
     if (preferenciasVisuais) {
@@ -84,12 +101,94 @@ export default function HomePage() {
     }
   }, [preferenciasVisuais])
 
+  // Decidir qual conteúdo exibir com base no estado de autenticação
+  if (isAuthLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+      </div>
+    )
+  }
+  
+  // Se o usuário não estiver autenticado, mostrar uma landing page
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-12 space-y-16">
+        {/* Hero section */}
+        <div className="max-w-5xl mx-auto text-center space-y-6">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
+            Organize seu cérebro único
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            Ferramentas personalizadas para ajudar pessoas neurodivergentes a organizar estudos, monitorar saúde e aumentar produtividade.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
+            <Link href="/login">
+              <Button className="min-w-[200px] text-lg py-6" size="lg">
+                <LogIn className="mr-2 h-5 w-5" />
+                Acessar conta
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button className="min-w-[200px] text-lg py-6" variant="outline" size="lg">
+                <UserPlus className="mr-2 h-5 w-5" />
+                Criar conta
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Features */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <div className="rounded-full bg-blue-100 dark:bg-blue-900/20 w-12 h-12 flex items-center justify-center mb-4">
+              <Activity className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2 dark:text-white">Monitoramento de Saúde</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">Acompanhe medicamentos, ciclos de sono e outros aspectos importantes para seu bem-estar.</p>
+            <Link href="/register" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center">
+              <span>Comece já</span>
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Link>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <div className="rounded-full bg-green-100 dark:bg-green-900/20 w-12 h-12 flex items-center justify-center mb-4">
+              <Brain className="h-6 w-6 text-green-600 dark:text-green-400" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2 dark:text-white">Estudos Personalizados</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">Ferramentas adaptadas para diferentes estilos de aprendizagem e necessidades específicas.</p>
+            <Link href="/register" className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 inline-flex items-center">
+              <span>Explore recursos</span>
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Link>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <div className="rounded-full bg-purple-100 dark:bg-purple-900/20 w-12 h-12 flex items-center justify-center mb-4">
+              <Target className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2 dark:text-white">Gerenciamento de Hiperfocos</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">Transforme seus interesses intensos em projetos produtivos e bem organizados.</p>
+            <Link href="/register" className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 inline-flex items-center">
+              <span>Saiba mais</span>
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Link>
+          </div>
+        </div>
+        
+        {/* Testimonials or additional info could go here */}
+      </div>
+    )
+  }
+
+  // Conteúdo para usuários autenticados (o dashboard existente)
   return (
     <div className={`container mx-auto px-4 space-y-6 ${isLoading ? 'opacity-80' : ''}`}>
       <DashboardHeader
         title="Início"
-        userName={nomeUsuario}
-        description="Aqui está seu progresso e tarefas para hoje."
+        userName={userName || nomeUsuario}
+        description={`Bem-vindo(a) de volta! Aqui está seu progresso e tarefas para hoje.`}
         actions={<PreferencesButton />}
       />
       

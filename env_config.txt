@@ -1,0 +1,5 @@
+OPENAI_API_KEY=sua_chave_openai_aqui
+ANTHROPIC_API_KEY=sua_chave_anthropic_aqui
+# Opcional, se estiver usando Browserbase
+# BROWSERBASE_API_KEY=sua_chave_browserbase_aqui
+# BROWSERBASE_PROJECT_ID=seu_id_projeto_browserbase_aqui

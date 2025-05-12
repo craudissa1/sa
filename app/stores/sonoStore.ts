@@ -1,6 +1,8 @@
+'use client';
+
 import { create } from 'zustand';
-import { supabase } from '../lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
 
 // Tipos Adaptados para Supabase
 export type RegistroSono = {

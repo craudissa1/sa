@@ -1,13 +1,13 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  createClientComponentClient, 
-  Session, 
-  User 
-} from '@supabase/auth-helpers-nextjs';
-import { useRouter } from 'next/navigation';
+import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
+import { useRouter, useSearchParams } from 'next/navigation';
 import StoreInitializer from '../components/utils/StoreInitializer';
+import { supabase } from '../lib/supabaseClient';
+import AuthListener from '../components/auth/AuthListener';
+
+// Usar a instância centralizada do cliente Supabase
 
 // Contexto de autenticação
 export const AuthContext = createContext<{
@@ -33,7 +33,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const supabase = createClientComponentClient();
 
   // Obter sessão inicial e configurar ouvinte para mudanças na autenticação
   useEffect(() => {
@@ -49,21 +48,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     getSession();
 
+    // Lidar com o caso de tokens na URL (hash) para OAuth
+    if (typeof window !== 'undefined') {
+      // Se temos hash com token, tentamos processar
+      if (window.location.hash && window.location.hash.includes('access_token')) {
+        console.log('AuthProvider: Hash com access_token detectado, processando...');
+        
+        // Tentar extrair tokens de forma mais robusta
+        const accessTokenMatch = window.location.hash.match(/[#&]access_token=([^&]+)/);
+        const refreshTokenMatch = window.location.hash.match(/[#&]refresh_token=([^&]+)/);
+        
+        if (accessTokenMatch) {
+          try {
+            const accessToken = decodeURIComponent(accessTokenMatch[1]);
+            const refreshToken = refreshTokenMatch ? decodeURIComponent(refreshTokenMatch[1]) : '';
+            
+            // Tentativa de setar a sessão manualmente
+            (async () => {
+              try {
+                const { error } = await supabase.auth.setSession({
+                  access_token: accessToken,
+                  refresh_token: refreshToken,
+                });
+                
+                if (error) {
+                  console.error('Erro ao definir sessão:', error);
+                } else {
+                  console.log('Sessão definida com sucesso via hash token');
+                  router.refresh();
+                }
+              } catch (e) {
+                console.error('Erro ao processar tokens do hash:', e);
+              }
+            })();
+          } catch (e) {
+            console.error('Erro ao decodificar tokens:', e);
+          }
+        }
+      }
+    }
+    
     // Configurar ouvinte para mudanças na autenticação
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      // Forçar a atualização do router para refletir o novo estado de autenticação
-      router.refresh();
-    });
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event: AuthChangeEvent, session: Session | null) => {
+        console.log("AuthProvider: Evento de autenticação recebido:", event);
+        
+        if (event === 'SIGNED_IN') {
+          console.log("AuthProvider: Login detectado, forçando isLoading = false");
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+        
+        // Forçar a atualização do router para refletir o novo estado de autenticação
+        router.refresh();
+      }
+    );
 
     // Limpar ouvinte quando o componente for desmontado
     return () => {
       authListener?.subscription?.unsubscribe();
     };
-  }, [router, supabase]);
+  }, [router]);
 
   // Método para fazer logout
   const signOut = async () => {
@@ -98,6 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{ session, user, loading, signOut, refreshSession }}>
       <StoreInitializer />
+      <AuthListener />
       {children}
     </AuthContext.Provider>
   );

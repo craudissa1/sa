@@ -26,10 +26,11 @@ export type BlocoTempo = {
 export type Refeicao = {
   id?: string;
   user_id?: string;
-  hora: string;
-  descricao: string;
-  foto?: string; // Será uma URL para o Supabase Storage
   data: string; // formato YYYY-MM-DD
+  horario: string; // Alterado de hora para horario para alinhar com meal_logs
+  descricao: string;
+  tipoIcone?: string | null; // Adicionado para alinhar com RegistroRefeicao
+  foto_url?: string | null; // Alterado de foto para foto_url para alinhar com meal_logs
   created_at?: string;
 };
 
@@ -151,7 +152,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       ] = await Promise.all([
         supabase.from('tasks').select('*').eq('user_id', userId),
         supabase.from('time_blocks').select('*').eq('user_id', userId),
-        supabase.from('meals').select('*').eq('user_id', userId),
+        supabase.from('meal_logs').select('*').eq('user_id', userId),
         supabase.from('medications').select('*').eq('user_id', userId),
         supabase.from('mood_logs').select('*').eq('user_id', userId),
         supabase.from('user_configurations').select('*').eq('user_id', userId).maybeSingle(),
@@ -234,12 +235,12 @@ export const useAppStore = create<AppState>()((set, get) => ({
   adicionarRefeicao: async (refeicao) => {
     const user = get().currentUser;
     if (!user) throw new Error('User not authenticated');
-    const { data, error } = await supabase.from('meals').insert([{ ...refeicao, user_id: user.id }]).select();
+    const { data, error } = await supabase.from('meal_logs').insert([{ ...refeicao, user_id: user.id }]).select();
     if (error) throw error;
     if (data) set(state => ({ refeicoes: [...state.refeicoes, ...data] }));
   },
   removerRefeicao: async (id) => {
-    const { error } = await supabase.from('meals').delete().eq('id', id);
+    const { error } = await supabase.from('meal_logs').delete().eq('id', id);
     if (error) throw error;
     set(state => ({ refeicoes: state.refeicoes.filter(r => r.id !== id) }));
   },

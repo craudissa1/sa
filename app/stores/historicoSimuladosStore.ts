@@ -1,3 +1,5 @@
+'use client';
+
 import { create } from "zustand";
 import { supabase } from "../lib/supabaseClient"; // Ajuste o caminho se necessário
 import { User } from "@supabase/supabase-js";
@@ -83,7 +85,7 @@ export const useHistoricoSimuladosStore = create<HistoricoSimuladosState>()((set
             idMeta: meta.id,
             titulo: meta.titulo,
             totalQuestoes: meta.totalQuestoes,
-            tentativas: (tentativasData || []).filter(t => t.simulado_meta_id === meta.id)
+            tentativas: (tentativasData || []).filter((t: { simulado_meta_id: string }) => t.simulado_meta_id === meta.id)
           };
         }
       }

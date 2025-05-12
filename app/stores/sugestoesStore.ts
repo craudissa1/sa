@@ -1,3 +1,5 @@
+'use client';
+
 import { create } from 'zustand';
 import { supabase } from '../lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
@@ -38,7 +40,7 @@ export const useSugestoesStore = create<SugestoesState>()((set, get) => ({
         .eq('user_id', userId);
 
       if (error) throw error;
-      set({ sugestoesFavoritas: data?.map(item => item.suggestion_text) || [] });
+      set({ sugestoesFavoritas: data?.map((item: { suggestion_text: string }) => item.suggestion_text) || [] });
     } catch (error) {
       console.error("Error fetching sugestoes favoritas:", error);
       set({ sugestoesFavoritas: [] });

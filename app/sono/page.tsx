@@ -1,12 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { useSonoData } from '../hooks/useSonoData'
 import { RegistroSono } from '../components/sono/RegistroSono'
 import { VisualizadorSemanal } from '../components/sono/VisualizadorSemanal'
 import { ConfiguracaoLembretes } from '../components/sono/ConfiguracaoLembretes'
 
 export default function SonoPage() {
   const [abaSelecionada, setAbaSelecionada] = useState<'registro' | 'visualizador' | 'lembretes'>('registro')
+  useSonoData()
   
   return (
     <main className="container mx-auto px-4 py-8 max-w-7xl">

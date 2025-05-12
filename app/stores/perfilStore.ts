@@ -1,3 +1,5 @@
+'use client';
+
 import { create } from "zustand";
 import { supabase } from "../lib/supabaseClient"; // Ajuste o caminho se necessário
 import { User } from "@supabase/supabase-js";
@@ -152,12 +154,26 @@ export const usePerfilStore = create<PerfilState>()((set, get) => ({
     
     // ATUALIZAÇÃO: O payload não deve conter 'id', pois é a chave primária e não deve ser alterada.
     // O user.id ou currentPerfil.id será usado na cláusula .eq()
-    const payload = { ...updates }; 
-    // delete payload.id; // Garantir que 'id' não está no payload de update
+    // Criar um novo objeto para o payload do Supabase com mapeamento explícito quando necessário
+    const payloadParaSupabase: any = {};
+    for (const key in updates) {
+      if (Object.prototype.hasOwnProperty.call(updates, key)) {
+        if (key === 'metasDiarias') {
+          // Mapear explicitamente metasDiarias para metas_diarias
+          payloadParaSupabase['metas_diarias'] = (updates as any)[key];
+        } else if (key === 'preferenciasVisuais') {
+          // Mapear explicitamente preferenciasVisuais para preferencias_visuais se necessário
+          payloadParaSupabase['preferencias_visuais'] = (updates as any)[key];
+        } else {
+          // Para outros campos, manter a chave original (o SDK deveria fazer o mapeamento)
+          payloadParaSupabase[key] = (updates as any)[key];
+        }
+      }
+    }
 
     const { data, error } = await supabase
       .from(NOME_TABELA_PERFIS)
-      .update(payload)
+      .update(payloadParaSupabase) // Usar o payload com chaves mapeadas
       .eq("id", currentPerfil.id) // Condição de atualização é na coluna 'id'
       .select()
       .single();
@@ -169,7 +185,8 @@ export const usePerfilStore = create<PerfilState>()((set, get) => ({
       if (error.code === "PGRST116" || (error.details && error.details.includes("0 rows"))) {
         console.log("Perfil não encontrado para update, tentando inserir como novo (upsert manual)...");
         // ATUALIZAÇÃO: payload para insert
-        const perfilParaSalvar: Omit<PerfilUsuario, "created_at" | "updated_at"> = {
+        // Criar um objeto para enviar ao Supabase com mapeamento explícito de campos
+        const perfilParaSalvar: any = {
             id: currentPerfil.id, // 'id' da tabela profiles é o user_id
             username: updates.username !== undefined ? updates.username : defaultLocalStateForCreation.username,
             nome_completo: updates.nome_completo !== undefined ? updates.nome_completo : defaultLocalStateForCreation.nome_completo,
@@ -181,8 +198,10 @@ export const usePerfilStore = create<PerfilState>()((set, get) => ({
             meta_hidratacao_ml: updates.meta_hidratacao_ml !== undefined ? updates.meta_hidratacao_ml : defaultLocalStateForCreation.meta_hidratacao_ml,
             meta_tempo_estudo_minutos: updates.meta_tempo_estudo_minutos !== undefined ? updates.meta_tempo_estudo_minutos : defaultLocalStateForCreation.meta_tempo_estudo_minutos,
             meta_tempo_lazer_minutos: updates.meta_tempo_lazer_minutos !== undefined ? updates.meta_tempo_lazer_minutos : defaultLocalStateForCreation.meta_tempo_lazer_minutos,
-            preferenciasVisuais: updates.preferenciasVisuais !== undefined ? updates.preferenciasVisuais : defaultLocalStateForCreation.preferenciasVisuais,
-            metasDiarias: updates.metasDiarias !== undefined ? updates.metasDiarias : defaultLocalStateForCreation.metasDiarias,
+            // Mapear explicitamente preferenciasVisuais para preferencias_visuais
+            preferencias_visuais: updates.preferenciasVisuais !== undefined ? updates.preferenciasVisuais : defaultLocalStateForCreation.preferenciasVisuais,
+            // Mapear explicitamente metasDiarias para metas_diarias
+            metas_diarias: updates.metasDiarias !== undefined ? updates.metasDiarias : defaultLocalStateForCreation.metasDiarias,
             notificacoesAtivas: typeof updates.notificacoesAtivas === "boolean" ? updates.notificacoesAtivas : defaultLocalStateForCreation.notificacoesAtivas,
             pausasAtivas: typeof updates.pausasAtivas === "boolean" ? updates.pausasAtivas : defaultLocalStateForCreation.pausasAtivas,
         };

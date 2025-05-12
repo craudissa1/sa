@@ -1,3 +1,5 @@
+'use client';
+
 import { create } from 'zustand';
 import { supabase } from '../lib/supabaseClient'; // Ajuste o caminho se necessário
 import { User } from '@supabase/supabase-js';
@@ -88,24 +90,101 @@ export const useFinancasStore = create<FinancasState>()((set, get) => ({
   setCurrentUser: (user) => set({ currentUser: user }),
 
   fetchFinancasData: async (userId) => {
-    if (!userId) return;
+    if (!userId) {
+      console.warn('fetchFinancasData chamado sem userId');
+      return;
+    }
+    
     try {
-      const [
-        { data: categoriasData, error: categoriasError },
-        { data: transacoesData, error: transacoesError },
-        { data: envelopesData, error: envelopesError },
-        { data: pagamentosData, error: pagamentosError },
-      ] = await Promise.all([
-        supabase.from('finance_categories').select('*').eq('user_id', userId),
-        supabase.from('finance_transactions').select('*').eq('user_id', userId),
-        supabase.from('finance_envelopes').select('*').eq('user_id', userId),
-        supabase.from('finance_recurring_payments').select('*').eq('user_id', userId),
-      ]);
-
-      if (categoriasError) console.error('Error fetching categorias:', categoriasError.message);
-      if (transacoesError) console.error('Error fetching transacoes:', transacoesError.message);
-      if (envelopesError) console.error('Error fetching envelopes:', envelopesError.message);
-      if (pagamentosError) console.error('Error fetching pagamentos:', pagamentosError.message);
+      // Verificação explícita da sessão antes de fazer as chamadas
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      
+      if (sessionError) {
+        console.error('fetchFinancasData: Erro ao obter sessão:', sessionError.message);
+        return;
+      }
+      
+      if (!session) {
+        console.error('fetchFinancasData: Não há sessão ativa no momento.');
+        return;
+      }
+      
+      // Verificar se o token tem o mesmo usuário que estamos tentando buscar
+      if (session.user.id !== userId) {
+        console.warn(`fetchFinancasData: userId requisitado (${userId}) é diferente do usuário na sessão (${session.user.id}). Usando o da sessão.`);
+        userId = session.user.id; // Corrigir para usar o ID do usuário da sessão atual
+      }
+      
+      console.log('fetchFinancasData: Sessão Supabase ativa, buscando dados para userId:', userId);
+      
+      // Verificar se o token está funcionando corretamente
+      const { data: userInfo, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('fetchFinancasData: Erro ao obter informações do usuário:', userError.message);
+      } else {
+        console.log('fetchFinancasData: Usuário autenticado:', userInfo.user.email);
+      }
+      
+      // Buscar dados sequencialmente para isolar melhor os erros
+      console.log('Buscando categorias...');
+      const { data: categoriasData, error: categoriasError } = await supabase
+        .from('finance_categories')
+        .select('*')
+        .eq('user_id', userId);
+      
+      if (categoriasError) {
+        console.error('Erro ao buscar categorias:', categoriasError.message, categoriasError.code, categoriasError.details);
+        if (categoriasError.code === 'PGRST301') {
+          console.error('Erro de permissão (RLS): Verificando token JWT e refresh session...');
+          // Tentar atualizar a sessão
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshError) {
+            console.error('Erro ao atualizar sessão:', refreshError.message);
+          } else if (refreshData?.session) {
+            console.log('Sessão atualizada com sucesso. Tentar buscar dados novamente.');
+            // Poderia tentar buscar os dados novamente, mas por simplicidade vamos continuar
+          }
+        }
+      } else {
+        console.log(`Categorias carregadas com sucesso: ${categoriasData?.length || 0} itens`);
+      }
+      
+      console.log('Buscando transações...');
+      const { data: transacoesData, error: transacoesError } = await supabase
+        .from('finance_transactions')
+        .select('*')
+        .eq('user_id', userId);
+      
+      if (transacoesError) {
+        console.error('Erro ao buscar transações:', transacoesError.message, transacoesError.code, transacoesError.details);
+      } else {
+        console.log(`Transações carregadas com sucesso: ${transacoesData?.length || 0} itens`);
+      }
+      
+      console.log('Buscando envelopes...');
+      const { data: envelopesData, error: envelopesError } = await supabase
+        .from('finance_envelopes')
+        .select('*')
+        .eq('user_id', userId);
+      
+      if (envelopesError) {
+        console.error('Erro ao buscar envelopes:', envelopesError.message, envelopesError.code, envelopesError.details);
+      } else {
+        console.log(`Envelopes carregados com sucesso: ${envelopesData?.length || 0} itens`);
+      }
+      
+      console.log('Buscando pagamentos recorrentes...');
+      const { data: pagamentosData, error: pagamentosError } = await supabase
+        .from('finance_recurring_payments')
+        .select('*')
+        .eq('user_id', userId);
+      
+      if (pagamentosError) {
+        console.error('Erro ao buscar pagamentos recorrentes:', pagamentosError.message, pagamentosError.code, pagamentosError.details);
+      } else {
+        console.log(`Pagamentos recorrentes carregados com sucesso: ${pagamentosData?.length || 0} itens`);
+      }
 
       set({
         categorias: categoriasData || [],
@@ -114,7 +193,7 @@ export const useFinancasStore = create<FinancasState>()((set, get) => ({
         pagamentosRecorrentes: pagamentosData || [],
       });
     } catch (error) {
-      console.error('Error fetching financas data:', error);
+      console.error('Erro não esperado ao buscar dados financeiros:', error);
     }
   },
 

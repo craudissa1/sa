@@ -3,8 +3,22 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../auth/AuthProvider'; // Import do nosso novo hook useAuth
-import { Mail, Lock, AlertCircle, Github, ExternalLink } from 'lucide-react';
+import { z } from 'zod';
+import { useAuth } from '../auth/AuthProvider';
+import { Mail, Lock, AlertCircle, Github, ExternalLink, CheckCircle, XCircle } from 'lucide-react';
+
+// Esquema de validação com Zod
+const loginSchema = z.object({
+  email: z.string()
+    .email({ message: 'Formato de email inválido' })
+    .min(1, { message: 'Email é obrigatório' }),
+  
+  password: z.string()
+    .min(1, { message: 'Senha é obrigatória' })
+});
+
+// Tipo inferido do esquema
+type LoginFormData = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
   const router = useRouter();
@@ -12,13 +26,34 @@ const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [generalError, setGeneralError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [migrationMessage, setMigrationMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isResendingEmail, setIsResendingEmail] = useState(false);
+  const [isEmailNotConfirmed, setIsEmailNotConfirmed] = useState(false);
+  const [emailForResend, setEmailForResend] = useState('');
+  const [errors, setErrors] = useState<Partial<Record<keyof LoginFormData, string>>>({});
   
   // Usando o hook useAuth para acessar as funções de autenticação
-  const { signIn, signUp, signInWithGoogle, user } = useAuth();
+  const { signIn, signUp, signInWithGoogle, user, resendConfirmationEmail } = useAuth();
   
+  // Verificar se o email foi confirmado recentemente
+  useEffect(() => {
+    // Verificar se estamos no navegador
+    if (typeof window !== 'undefined') {
+      const emailJustConfirmed = localStorage.getItem('emailJustConfirmed');
+      
+      if (emailJustConfirmed === 'true') {
+        // Limpar o indicador
+        localStorage.removeItem('emailJustConfirmed');
+        
+        // Redirecionar para a página de confirmação de email
+        router.push('/auth/email-confirmed');
+      }
+    }
+  }, [router]);
+
   // Verificar se o usuário já está autenticado
   useEffect(() => {
     if (user) {
@@ -28,16 +63,90 @@ const LoginForm = () => {
     }
   }, [user, router, searchParams]);
 
+  // Validação do formulário completo
+  const validateForm = () => {
+    try {
+      loginSchema.parse({ email, password });
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors = error.errors.reduce((acc, curr) => {
+          const field = curr.path[0] as keyof LoginFormData;
+          acc[field] = curr.message;
+          return acc;
+        }, {} as Partial<Record<keyof LoginFormData, string>>);
+        
+        setErrors(newErrors);
+      }
+      return false;
+    }
+  };
+
+  // Validação de um campo específico
+  const validateField = (fieldName: keyof LoginFormData, value: string) => {
+    try {
+      let fieldSchema;
+      
+      switch(fieldName) {
+        case 'email':
+          fieldSchema = loginSchema.shape.email;
+          break;
+        case 'password':
+          fieldSchema = loginSchema.shape.password;
+          break;
+      }
+      
+      if (fieldSchema) {
+        fieldSchema.parse(value);
+        
+        // Se chegou aqui, não houve erro de validação
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[fieldName];
+          return newErrors;
+        });
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        setErrors(prev => ({
+          ...prev,
+          [fieldName]: error.errors[0].message
+        }));
+      }
+      return false;
+    }
+  };
+
+  // Validação em tempo real ao mudar o valor dos campos
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEmail(value);
+    if (value) validateField('email', value);
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPassword(value);
+    if (value) validateField('password', value);
+  };
+
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
-      setError('Por favor, preencha todos os campos');
+    // Validar todos os campos antes da submissão
+    if (!validateForm()) {
+      setGeneralError('Por favor, corrija os erros no formulário antes de continuar.');
       return;
     }
     
     setIsSubmitting(true);
-    setError(null);
+    setGeneralError(null);
+    setIsEmailNotConfirmed(false);
     
     try {
       // Usando a função signIn do hook useAuth
@@ -53,19 +162,56 @@ const LoginForm = () => {
     } catch (error: any) {
       console.error('Erro ao fazer login:', error);
       
-      if (error.message && error.message.includes('Invalid login')) {
-        setError('Email ou senha inválidos. Verifique suas credenciais.');
+      // Verificar se o erro é de email não confirmado
+      // Verifica tanto o código de erro (400) quanto padrões na mensagem
+      if ((error.status === 400 && error.message && error.message.includes('Email not confirmed')) || 
+          error.message && (
+          error.message.includes('Email not confirmed') || 
+          error.message.includes('Email não confirmado') || 
+          error.message.includes('Verifique seu email para o link de confirmação') ||
+          error.message.includes('User not confirmed')
+      )) {
+        setIsEmailNotConfirmed(true);
+        setEmailForResend(email);
+        setGeneralError('Seu email ainda não foi confirmado. Por favor, verifique sua caixa de entrada ou solicite um novo email de confirmação.');
+      } else if (error.message && error.message.includes('Invalid login')) {
+        setGeneralError('Email ou senha inválidos. Verifique suas credenciais.');
       } else {
-        setError(error.message || 'Ocorreu um erro durante o login. Tente novamente.');
+        setGeneralError(error.message || 'Ocorreu um erro durante o login. Tente novamente.');
       }
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Função para reenviar o email de confirmação
+  const handleResendConfirmationEmail = async () => {
+    if (!emailForResend) return;
+    
+    setIsResendingEmail(true);
+    setGeneralError(null);
+    setSuccessMessage(null);
+    
+    try {
+      const { error, success } = await resendConfirmationEmail(emailForResend);
+      
+      if (error) throw error;
+      
+      if (success) {
+        setSuccessMessage(`Um novo email de confirmação foi enviado para ${emailForResend}. Por favor, verifique sua caixa de entrada e pasta de spam.`);
+        setIsEmailNotConfirmed(false);
+      }
+    } catch (error: any) {
+      console.error('Erro ao reenviar email de confirmação:', error);
+      setGeneralError(`Erro ao reenviar o email de confirmação: ${error.message || 'Tente novamente.'}`);
+    } finally {
+      setIsResendingEmail(false);
+    }
+  };
+
   const handleSocialLogin = async (provider: 'github' | 'google') => {
     setIsLoading(true);
-    setError(null);
+    setGeneralError(null);
     
     try {
       if (provider === 'google') {
@@ -80,11 +226,11 @@ const LoginForm = () => {
         setMigrationMessage('Login com Google iniciado...');
       } else {
         // Adicionar suporte para outros provedores no futuro
-        setError(`Login com ${provider} será implementado em breve.`);
+        setGeneralError(`Login com ${provider} será implementado em breve.`);
       }
     } catch (error: any) {
       console.error(`Erro ao fazer login com ${provider}:`, error);
-      setError(`Erro ao conectar com ${provider}. ${error.message || 'Tente novamente.'}`);
+      setGeneralError(`Erro ao conectar com ${provider}. ${error.message || 'Tente novamente.'}`);
     } finally {
       setIsLoading(false);
     }
@@ -92,11 +238,30 @@ const LoginForm = () => {
 
   return (
     <div className="space-y-6">
-      {error && (
+      {generalError && (
         <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md mb-4">
           <div className="flex items-center">
             <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-red-700">{generalError}</p>
+            
+            {isEmailNotConfirmed && (
+              <button
+                type="button"
+                onClick={handleResendConfirmationEmail}
+                disabled={isResendingEmail}
+                className="ml-2 text-sm font-medium text-blue-600 hover:text-blue-500 disabled:text-blue-300 disabled:cursor-not-allowed"
+              >
+                {isResendingEmail ? 'Enviando...' : 'Reenviar email de confirmação'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {successMessage && (
+        <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-md mb-4">
+          <div className="flex items-center">
+            <p className="text-sm text-green-700">{successMessage}</p>
           </div>
         </div>
       )}
@@ -114,13 +279,26 @@ const LoginForm = () => {
               id="email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
               placeholder="seu.email@exemplo.com"
               required
-              className="bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border border-gray-300 rounded-md py-2 px-3 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className={`bg-white focus:outline-none focus:ring-2 focus:border-blue-500 block w-full pl-10 sm:text-sm border ${errors.email ? 'border-red-500 focus:ring-red-500' : email && !errors.email ? 'border-green-500 focus:ring-green-500' : 'border-gray-300 focus:ring-blue-500'} rounded-md py-2 px-3 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200`}
               disabled={isSubmitting}
             />
+            {!errors.email && email && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+              </div>
+            )}
+            {errors.email && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <XCircle className="h-5 w-5 text-red-500" />
+              </div>
+            )}
           </div>
+          {errors.email && (
+            <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+          )}
         </div>
         
         <div>
@@ -135,13 +313,26 @@ const LoginForm = () => {
               id="password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
               placeholder="••••••••"
               required
-              className="bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border border-gray-300 rounded-md py-2 px-3 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className={`bg-white focus:outline-none focus:ring-2 focus:border-blue-500 block w-full pl-10 sm:text-sm border ${errors.password ? 'border-red-500 focus:ring-red-500' : password && !errors.password ? 'border-green-500 focus:ring-green-500' : 'border-gray-300 focus:ring-blue-500'} rounded-md py-2 px-3 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200`}
               disabled={isSubmitting}
             />
+            {!errors.password && password && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+              </div>
+            )}
+            {errors.password && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <XCircle className="h-5 w-5 text-red-500" />
+              </div>
+            )}
           </div>
+          {errors.password && (
+            <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+          )}
         </div>
         
         <div className="flex items-center justify-between">
@@ -170,7 +361,7 @@ const LoginForm = () => {
         <div>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || Object.keys(errors).length > 0}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Entrando...' : 'Entrar'}
@@ -212,17 +403,6 @@ const LoginForm = () => {
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
             </svg>
             <span className="ml-2">Entrar com Google</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSocialLogin('google')}
-            disabled={isLoading}
-            className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
-          >
-            <svg className="h-5 w-5 text-gray-700 dark:text-gray-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12.545 10.239v3.821h5.445c-.712 2.315-2.647 3.972-5.445 3.972a6.033 6.033 0 0 1-6.031-6.024 6.033 6.033 0 0 1 6.031-6.024c1.498 0 2.866.549 3.921 1.453l2.814-2.814A9.969 9.969 0 0 0 12.545 2a9.949 9.949 0 0 0-9.95 9.95 9.949 9.949 0 0 0 9.95 9.95c4.963 0 9.236-3.108 10.9-7.87.28-.816.459-1.69.511-2.614h-11.4v3.378z" />
-            </svg>
-            <span className="ml-2">Google</span>
           </button>
         </div>
       </div>

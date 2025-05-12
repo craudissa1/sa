@@ -1,4 +1,5 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient, CookieOptions } from '@supabase/ssr';
+import { CookieMethodsServer } from '@/types/supabase-ssr';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -34,15 +35,33 @@ export async function POST(request: NextRequest) {
     const payload: WebhookPayload = await request.json();
     
     // Cliente do Supabase para operações autenticadas como servidor
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = cookies();
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name: string, options: CookieOptions) {
+            cookieStore.delete({ name, ...options })
+          },
+        } satisfies CookieMethodsServer,
+      }
+    );
     
     // Processar diferentes tipos de eventos
     switch (payload.table) {
-      case 'user_profiles':
+      case 'profiles':
         // Quando um perfil de usuário é criado ou atualizado
         if (payload.type === 'INSERT' || payload.type === 'UPDATE') {
           // Por exemplo, atualizar configurações padrão, enviar email de boas-vindas, etc.
-          console.log(`Perfil de usuário ${payload.record.user_id} ${payload.type === 'INSERT' ? 'criado' : 'atualizado'}`);
+          console.log(`Perfil de usuário ${payload.record.id} ${payload.type === 'INSERT' ? 'criado' : 'atualizado'}`);
         }
         break;
         

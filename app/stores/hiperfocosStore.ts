@@ -1,3 +1,5 @@
+'use client';
+
 import { create } from "zustand";
 import { supabase } from "../lib/supabaseClient"; // Ajuste o caminho se necessário
 import { User } from "@supabase/supabase-js";

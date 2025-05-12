@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Utensils, Book, BookOpen, Heart, Smile, DollarSign, Rocket, X } from 'lucide-react'
+import { Home, Utensils, Book, BookOpen, Heart, Smile, DollarSign, Rocket, LogOut, X } from 'lucide-react'
 import { NavItem } from '@/app/types'
+import { useAuth } from '../auth/AuthProvider'
 
 const navItems: NavItem[] = [
   {
@@ -70,6 +71,7 @@ type SidebarProps = {
 
 export function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname() ?? '';
+  const { signOut } = useAuth();
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Escape') {
@@ -141,6 +143,30 @@ export function Sidebar({ onClose }: SidebarProps) {
                 </Link>
               )
             })}
+          </div>
+          
+          {/* Botão de logout na parte inferior */}
+          <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              className="flex w-full items-center px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onClick={async () => {
+                try {
+                  await signOut();
+                  onClose();
+                  // O redirecionamento é tratado pelo listener no AuthProvider
+                } catch (error) {
+                  console.error('Erro ao fazer logout:', error);
+                }
+              }}
+              aria-label="Sair da conta"
+              tabIndex={0}
+            >
+              <LogOut 
+                className="mr-3 h-5 w-5 text-red-500" 
+                aria-hidden="true" 
+              />
+              <span>Sair da conta</span>
+            </button>
           </div>
         </nav>
       </div>

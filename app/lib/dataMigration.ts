@@ -39,9 +39,9 @@ export class DataMigrationService {
 
     // Verificar se o usuário já tem um perfil no Supabase
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .select('id')
-      .eq('user_id', this.userId)
+      .eq('id', this.userId)
       .limit(1);
 
     if (error) {
@@ -114,7 +114,8 @@ export class DataMigrationService {
         altoContraste: perfilState.perfil?.preferenciasVisuais?.altoContraste || false,
         reducaoEstimulos: perfilState.perfil?.preferenciasVisuais?.reducaoEstimulos || false
       },
-      metasDiarias: {
+      // Usando snake_case para corresponder exatamente à coluna no banco de dados
+      metas_diarias: {
         horasSono: perfilState.perfil?.metasDiarias?.horasSono || 8,
         coposAgua: perfilState.perfil?.metasDiarias?.coposAgua || 8,
         pausasProgramadas: perfilState.perfil?.metasDiarias?.pausasProgramadas || 4,
@@ -193,7 +194,7 @@ export class DataMigrationService {
     // Criar mapa de nomes para IDs
     const mapaCategorias = new Map();
     if (categoriasDB) {
-      categoriasDB.forEach(cat => {
+      categoriasDB.forEach((cat: { nome: string; id: string }) => {
         mapaCategorias.set(cat.nome, cat.id);
       });
     }

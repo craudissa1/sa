@@ -1,4 +1,4 @@
-import { User } from '@supabase/supabase-js';
+import { User, REALTIME_SUBSCRIBE_STATES } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
 import { useAppStore } from '../store';
 
@@ -10,7 +10,7 @@ const REALTIME_TABLES = [
   'medications',
   'mood_logs',
   'user_configurations',
-  'user_profiles',
+  'profiles',
   'pomodoro_configurations'
 ];
 
@@ -46,7 +46,7 @@ class SupabaseRealtime {
     
     Object.values(this.channels).forEach(channel => {
       if (channel && channel.unsubscribe) {
-        supabase.removeChannel(channel).catch(err => 
+        supabase.removeChannel(channel).catch((err: Error) => 
           console.error('Erro ao remover canal:', err)
         );
       }
@@ -72,9 +72,9 @@ class SupabaseRealtime {
             table: table, 
             filter: `user_id=eq.${this.userId}` 
           },
-          (payload) => this.handleRealtimeUpdate(table, payload)
+          (payload: any) => this.handleRealtimeUpdate(table, payload)
         )
-        .subscribe((status, err) => {
+        .subscribe((status: REALTIME_SUBSCRIBE_STATES, err?: Error) => {
           if (status === 'SUBSCRIBED') {
             console.log(`Subscrito à tabela ${table} para o usuário ${this.userId}`);
           }
